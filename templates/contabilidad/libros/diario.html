@@ -1,0 +1,70 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Libro Diario</h2>
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-auto">
+      <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+    </div>
+    <div class="col-auto">
+      <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+    </div>
+    <div class="col-auto">
+      <select name="cuenta" class="form-select">
+        <option value="">Todas las cuentas</option>
+        {% for c in cuentas_con_movimientos %}
+        <option value="{{ c.cuenta }}" {% if cuenta == c.cuenta %}selected{% endif %}>{{ c.cuenta }} - {{ c.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="tipo_asiento" class="form-select">
+        <option value="">Todos los tipos</option>
+        {% for t in tipos_asiento %}
+        <option value="{{ t.codigo }}" {% if tipo_asiento == t.codigo %}selected{% endif %}>{{ t.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Código</th>
+          <th>Glosa</th>
+          <th>Cuenta</th>
+          <th>Descripción</th>
+          <th>Debe (Bs)</th>
+          <th>Haber (Bs)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asiento in asientos %}
+          {% for detalle in asiento.detalles %}
+            <tr>
+              <td>{{ asiento.fecha }}</td>
+              <td>{{ asiento.codigo }}</td>
+              <td>{{ asiento.glosa }}</td>
+              <td>{{ detalle.cuenta }}</td>
+              <td>{{ detalle.cuenta_descrip }}</td>
+              <td class="text-end">{{ detalle.debebs|float|round(2) }}</td>
+              <td class="text-end">{{ detalle.haberbs|float|round(2) }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="5" class="text-end">Totales:</th>
+          <th class="text-end">{{ total_debe|float|round(2) }}</th>
+          <th class="text-end">{{ total_haber|float|round(2) }}</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

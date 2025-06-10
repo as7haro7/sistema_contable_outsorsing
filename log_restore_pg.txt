@@ -1,0 +1,1507 @@
+=== STDOUT ===
+
+
+=== STDERR ===
+pg_restore: error: could not execute query: ERROR:  ya existe una función «actualizar_fecha_modificacion» con los mismos argumentos
+La orden era: CREATE FUNCTION public.actualizar_fecha_modificacion() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.fecha_modificacion = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «calcular_saldo_cuenta» con los mismos argumentos
+La orden era: CREATE FUNCTION public.calcular_saldo_cuenta(p_cuenta character varying) RETURNS numeric
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_debe NUMERIC := 0;
+    v_haber NUMERIC := 0;
+    v_saldo NUMERIC := 0;
+BEGIN
+    -- Sumar movimientos debe
+    SELECT COALESCE(SUM(debebs), 0) INTO v_debe
+    FROM Asiento_det ad
+    JOIN Asiento a ON ad.cod_asiento = a.codigo
+    WHERE ad.cuenta = p_cuenta AND a.estado = 'CONFIRMADO';
+
+    -- Sumar movimientos haber
+    SELECT COALESCE(SUM(haberbs), 0) INTO v_haber
+    FROM Asiento_det ad
+    JOIN Asiento a ON ad.cod_asiento = a.codigo
+    WHERE ad.cuenta = p_cuenta AND a.estado = 'CONFIRMADO';
+
+    -- Calcular saldo según tipo de cuenta
+    SELECT
+        CASE
+            WHEN pc.tipomov = 'DEUDOR' THEN (v_debe - v_haber)
+            WHEN pc.tipomov = 'ACREEDOR' THEN (v_haber - v_debe)
+            ELSE (v_debe - v_haber)
+        END INTO v_saldo
+    FROM Plancuenta pc
+    WHERE pc.cuenta = p_cuenta;
+
+    RETURN COALESCE(v_saldo, 0);
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «calcular_valores_factura» con los mismos argumentos
+La orden era: CREATE FUNCTION public.calcular_valores_factura(p_importe numeric, p_exento numeric DEFAULT 0, p_ice numeric DEFAULT 0, p_tasa_iva numeric DEFAULT 0.13) RETURNS TABLE(neto numeric, iva numeric, total_calculado numeric)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        (p_importe - COALESCE(p_exento, 0) - COALESCE(p_ice, 0)) as neto,
+        ROUND((p_importe - COALESCE(p_exento, 0) - COALESCE(p_ice, 0)) * p_tasa_iva, 2) as iva,
+        p_importe as total_calculado;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «existe_compra_duplicada» con los mismos argumentos
+La orden era: CREATE FUNCTION public.existe_compra_duplicada(p_nit character varying, p_factura character varying, p_fecha date, p_proveedor integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    count_duplicados INTEGER;
+BEGIN
+    SELECT COUNT(*)
+    INTO count_duplicados
+    FROM LibroCompras
+    WHERE nit = p_nit 
+      AND factura = p_factura 
+      AND fecha = p_fecha
+      AND proveedor = p_proveedor
+      AND estado != 'ANULADO';
+    
+    RETURN count_duplicados > 0;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «existe_venta_duplicada» con los mismos argumentos
+La orden era: CREATE FUNCTION public.existe_venta_duplicada(p_nit character varying, p_factura character varying, p_fecha date, p_cliente integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    count_duplicados INTEGER;
+BEGIN
+    SELECT COUNT(*)
+    INTO count_duplicados
+    FROM LibroVentas
+    WHERE nit = p_nit 
+      AND factura = p_factura 
+      AND fecha = p_fecha
+      AND cliente = p_cliente
+      AND estado != 'ANULADA';
+    
+    RETURN count_duplicados > 0;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «generar_codigo_asiento» con los mismos argumentos
+La orden era: CREATE FUNCTION public.generar_codigo_asiento() RETURNS character varying
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_numero INTEGER;
+    v_codigo VARCHAR;
+BEGIN
+    -- Obtener el siguiente número
+    SELECT COALESCE(MAX(CAST(SUBSTRING(codigo FROM 5) AS INTEGER)), 0) + 1
+    INTO v_numero
+    FROM Asiento
+    WHERE codigo LIKE 'ASI-%';
+
+    -- Formatear código
+    v_codigo := 'ASI-' || LPAD(v_numero::TEXT, 3, '0');
+
+    RETURN v_codigo;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «obtener_estadisticas_facturas» con los mismos argumentos
+La orden era: CREATE FUNCTION public.obtener_estadisticas_facturas(p_fecha_desde date DEFAULT NULL::date, p_fecha_hasta date DEFAULT NULL::date) RETURNS json
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_fecha_desde DATE;
+    v_fecha_hasta DATE;
+    v_stats JSON;
+BEGIN
+    -- Establecer fechas por defecto (mes actual)
+    v_fecha_desde := COALESCE(p_fecha_desde, DATE_TRUNC('month', CURRENT_DATE));
+    v_fecha_hasta := COALESCE(p_fecha_hasta, CURRENT_DATE);
+    
+    SELECT json_build_object(
+        'periodo', json_build_object(
+            'desde', v_fecha_desde,
+            'hasta', v_fecha_hasta
+        ),
+        'compras', json_build_object(
+            'total_facturas', COUNT(CASE WHEN tipo = 'COMPRA' THEN 1 END),
+            'total_importe', COALESCE(SUM(CASE WHEN tipo = 'COMPRA' THEN importe END), 0),
+            'total_iva', COALESCE(SUM(CASE WHEN tipo = 'COMPRA' THEN iva END), 0)
+        ),
+        'ventas', json_build_object(
+            'total_facturas', COUNT(CASE WHEN tipo = 'VENTA' THEN 1 END),
+            'total_importe', COALESCE(SUM(CASE WHEN tipo = 'VENTA' THEN importe END), 0),
+            'total_iva', COALESCE(SUM(CASE WHEN tipo = 'VENTA' THEN iva END), 0)
+        )
+    ) INTO v_stats
+    FROM (
+        SELECT 'COMPRA' as tipo, importe, iva FROM LibroCompras 
+        WHERE fecha BETWEEN v_fecha_desde AND v_fecha_hasta AND estado != 'ANULADO'
+        UNION ALL
+        SELECT 'VENTA' as tipo, importe, iva FROM LibroVentas 
+        WHERE fecha BETWEEN v_fecha_desde AND v_fecha_hasta AND estado != 'ANULADA'
+    ) facturas;
+    
+    RETURN v_stats;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «sp_anular_compra» con los mismos argumentos
+La orden era: CREATE FUNCTION public.sp_anular_compra(p_id integer, p_motivo character varying DEFAULT 'Anulación manual'::character varying, p_usuario character varying DEFAULT 'sistema'::character varying) RETURNS TABLE(success boolean, message text)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_existe BOOLEAN;
+    v_estado_actual VARCHAR;
+BEGIN
+    -- Verificar que existe la compra
+    SELECT EXISTS(SELECT 1 FROM LibroCompras WHERE id = p_id), 
+           estado
+    INTO v_existe, v_estado_actual
+    FROM LibroCompras WHERE id = p_id;
+    
+    IF NOT v_existe THEN
+        RETURN QUERY SELECT FALSE, 'La factura de compra no existe';
+        RETURN;
+    END IF;
+    
+    IF v_estado_actual = 'ANULADO' THEN
+        RETURN QUERY SELECT FALSE, 'La factura ya está anulada';
+        RETURN;
+    END IF;
+    
+    -- Anular la factura
+    UPDATE LibroCompras 
+    SET estado = 'ANULADO',
+        fecha_modificacion = CURRENT_TIMESTAMP
+    WHERE id = p_id;
+    
+    RETURN QUERY SELECT TRUE, 'Factura de compra anulada exitosamente';
+        
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, 'Error al anular: ' || SQLERRM;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «sp_anular_venta» con los mismos argumentos
+La orden era: CREATE FUNCTION public.sp_anular_venta(p_id integer, p_motivo character varying DEFAULT 'Anulación manual'::character varying, p_usuario character varying DEFAULT 'sistema'::character varying) RETURNS TABLE(success boolean, message text)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_existe BOOLEAN;
+    v_estado_actual VARCHAR;
+BEGIN
+    -- Verificar que existe la venta
+    SELECT EXISTS(SELECT 1 FROM LibroVentas WHERE id = p_id), 
+           estado
+    INTO v_existe, v_estado_actual
+    FROM LibroVentas WHERE id = p_id;
+    
+    IF NOT v_existe THEN
+        RETURN QUERY SELECT FALSE, 'La factura de venta no existe';
+        RETURN;
+    END IF;
+    
+    IF v_estado_actual = 'ANULADA' THEN
+        RETURN QUERY SELECT FALSE, 'La factura ya está anulada';
+        RETURN;
+    END IF;
+    
+    -- Anular la factura
+    UPDATE LibroVentas 
+    SET estado = 'ANULADA',
+        fecha_modificacion = CURRENT_TIMESTAMP
+    WHERE id = p_id;
+    
+    RETURN QUERY SELECT TRUE, 'Factura de venta anulada exitosamente';
+        
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, 'Error al anular: ' || SQLERRM;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «sp_registrar_compra» con los mismos argumentos
+La orden era: CREATE FUNCTION public.sp_registrar_compra(p_fecha date, p_nit character varying, p_proveedor integer, p_factura character varying, p_importe numeric, p_autorizacion character varying DEFAULT NULL::character varying, p_codigocontrol character varying DEFAULT NULL::character varying, p_exento numeric DEFAULT 0, p_ice numeric DEFAULT 0, p_flete numeric DEFAULT 0, p_tipo_fac character varying DEFAULT 'FACTURA'::character varying, p_usuario character varying DEFAULT 'sistema'::character varying) RETURNS TABLE(success boolean, message text, factura_id integer, valores_calculados json)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_error_msg TEXT;
+    v_neto NUMERIC;
+    v_iva NUMERIC;
+    v_total NUMERIC;
+    v_new_id INTEGER;
+    v_proveedor_existe BOOLEAN;
+BEGIN
+    -- Validar fecha
+    SELECT validar_fecha_factura(p_fecha) INTO v_error_msg;
+    IF v_error_msg != 'OK' THEN
+        RETURN QUERY SELECT FALSE, v_error_msg, NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Verificar que existe el proveedor
+    SELECT EXISTS(SELECT 1 FROM proveedor WHERE id = p_proveedor AND activo = TRUE) INTO v_proveedor_existe;
+    IF NOT v_proveedor_existe THEN
+        RETURN QUERY SELECT FALSE, 'El proveedor especificado no existe o está inactivo', NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Verificar duplicados
+    IF existe_compra_duplicada(p_nit, p_factura, p_fecha, p_proveedor) THEN
+        RETURN QUERY SELECT FALSE, 'Ya existe una compra con esos datos', NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Calcular valores
+    SELECT c.neto, c.iva, c.total_calculado 
+    INTO v_neto, v_iva, v_total
+    FROM calcular_valores_factura(p_importe, p_exento, p_ice) c;
+    
+    -- Insertar registro
+    INSERT INTO LibroCompras (
+        tipo_fac, fecha, nit, proveedor, factura, autorizacion, codigocontrol,
+        importe, exento, ice, neto, iva, flete, usuario, fechasys
+    ) VALUES (
+        p_tipo_fac, p_fecha, p_nit, p_proveedor, p_factura, p_autorizacion, p_codigocontrol,
+        p_importe, p_exento, p_ice, v_neto, v_iva, p_flete, p_usuario, CURRENT_TIMESTAMP
+    ) RETURNING id INTO v_new_id;
+    
+    -- Retornar resultado exitoso
+    RETURN QUERY SELECT 
+        TRUE,
+        'Compra registrada exitosamente'::TEXT,
+        v_new_id,
+        json_build_object(
+            'neto', v_neto,
+            'iva', v_iva,
+            'total', v_total,
+            'exento', p_exento,
+            'ice', p_ice,
+            'flete', p_flete
+        );
+        
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, 'Error interno: ' || SQLERRM, NULL::INTEGER, NULL::JSON;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «sp_registrar_venta» con los mismos argumentos
+La orden era: CREATE FUNCTION public.sp_registrar_venta(p_fecha date, p_nit character varying, p_cliente integer, p_razonsocial character varying, p_factura character varying, p_autorizacion character varying, p_importe numeric, p_exento numeric DEFAULT 0, p_ice numeric DEFAULT 0, p_usuario character varying DEFAULT 'sistema'::character varying) RETURNS TABLE(success boolean, message text, factura_id integer, valores_calculados json)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_error_msg TEXT;
+    v_neto NUMERIC;
+    v_iva NUMERIC;
+    v_total NUMERIC;
+    v_new_id INTEGER;
+    v_cliente_existe BOOLEAN;
+BEGIN
+    -- Validar fecha
+    SELECT validar_fecha_factura(p_fecha) INTO v_error_msg;
+    IF v_error_msg != 'OK' THEN
+        RETURN QUERY SELECT FALSE, v_error_msg, NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Verificar que existe el cliente
+    SELECT EXISTS(SELECT 1 FROM cliente WHERE id = p_cliente AND activo = TRUE) INTO v_cliente_existe;
+    IF NOT v_cliente_existe THEN
+        RETURN QUERY SELECT FALSE, 'El cliente especificado no existe o está inactivo', NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Verificar duplicados
+    IF existe_venta_duplicada(p_nit, p_factura, p_fecha, p_cliente) THEN
+        RETURN QUERY SELECT FALSE, 'Ya existe una venta con esos datos', NULL::INTEGER, NULL::JSON;
+        RETURN;
+    END IF;
+    
+    -- Calcular valores
+    SELECT c.neto, c.iva, c.total_calculado 
+    INTO v_neto, v_iva, v_total
+    FROM calcular_valores_factura(p_importe, p_exento, p_ice) c;
+    
+    -- Insertar registro
+    INSERT INTO LibroVentas (
+        fecha, nit, cliente, razonsocial, factura, autorizacion,
+        importe, exento, ice, neto, iva, usuario, fechasys
+    ) VALUES (
+        p_fecha, p_nit, p_cliente, p_razonsocial, p_factura, p_autorizacion,
+        p_importe, p_exento, p_ice, v_neto, v_iva, p_usuario, CURRENT_TIMESTAMP
+    ) RETURNING id INTO v_new_id;
+    
+    -- Retornar resultado exitoso
+    RETURN QUERY SELECT 
+        TRUE,
+        'Venta registrada exitosamente'::TEXT,
+        v_new_id,
+        json_build_object(
+            'neto', v_neto,
+            'iva', v_iva,
+            'total', v_total,
+            'exento', p_exento,
+            'ice', p_ice
+        );
+        
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, 'Error interno: ' || SQLERRM, NULL::INTEGER, NULL::JSON;
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe una función «validar_fecha_factura» con los mismos argumentos
+La orden era: CREATE FUNCTION public.validar_fecha_factura(p_fecha date) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- No puede ser fecha futura
+    IF p_fecha > CURRENT_DATE THEN
+        RETURN 'La fecha de la factura no puede ser futura';
+    END IF;
+    
+    -- No puede ser muy antigua (más de 2 años)
+    IF p_fecha < (CURRENT_DATE - INTERVAL '2 years') THEN
+        RETURN 'La fecha de la factura es muy antigua';
+    END IF;
+    
+    -- Validar que no sea fin de semana para facturas comerciales (opcional)
+    -- IF EXTRACT(dow FROM p_fecha) IN (0, 6) THEN
+    --     RETURN 'No se pueden registrar facturas en fines de semana';
+    -- END IF;
+    
+    RETURN 'OK';
+END;
+$$;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asiento» ya existe
+La orden era: CREATE TABLE public.asiento (
+    codigo character varying(50) NOT NULL,
+    cta character varying(100),
+    tipo character varying(50) NOT NULL,
+    secuencia integer DEFAULT 0,
+    srs character varying(50),
+    debebs numeric(18,2) DEFAULT 0.00,
+    haberbs numeric(18,2) DEFAULT 0.00,
+    debesus numeric(18,2) DEFAULT 0.00,
+    habersus numeric(18,2) DEFAULT 0.00,
+    glosa character varying(500) NOT NULL,
+    fecha date DEFAULT CURRENT_DATE NOT NULL,
+    estado character varying(20) DEFAULT 'BORRADOR'::character varying,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    usuario_confirmacion character varying(50),
+    fecha_confirmacion timestamp without time zone
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asiento_det» ya existe
+La orden era: CREATE TABLE public.asiento_det (
+    id integer NOT NULL,
+    cod_asiento character varying(50) NOT NULL,
+    cuenta character varying(100) NOT NULL,
+    item character varying(50),
+    debebs numeric(18,2) DEFAULT 0.00,
+    haberbs numeric(18,2) DEFAULT 0.00,
+    debesus numeric(18,2) DEFAULT 0.00,
+    habersus numeric(18,2) DEFAULT 0.00,
+    cencosto character varying(50),
+    referencia character varying(255),
+    orden integer DEFAULT 0,
+    CONSTRAINT chk_debe_haber CHECK ((((debebs > (0)::numeric) AND (haberbs = (0)::numeric)) OR ((debebs = (0)::numeric) AND (haberbs > (0)::numeric)) OR ((debebs = (0)::numeric) AND (haberbs = (0)::numeric))))
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asiento_det_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.asiento_det_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asientotemplate» ya existe
+La orden era: CREATE TABLE public.asientotemplate (
+    id integer NOT NULL,
+    tipo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    glosa character varying(500) NOT NULL,
+    activo boolean DEFAULT true,
+    usuario character varying(50) NOT NULL,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asientotemplate_det» ya existe
+La orden era: CREATE TABLE public.asientotemplate_det (
+    id integer NOT NULL,
+    id_template integer NOT NULL,
+    cuenta character varying(100) NOT NULL,
+    item character varying(50),
+    referencia character varying(255),
+    cencostos character varying(50),
+    orden integer DEFAULT 0,
+    es_debe boolean DEFAULT true
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asientotemplate_det_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.asientotemplate_det_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «asientotemplate_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.asientotemplate_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cencostos» ya existe
+La orden era: CREATE TABLE public.cencostos (
+    codigo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cliente» ya existe
+La orden era: CREATE TABLE public.cliente (
+    id integer NOT NULL,
+    razon character varying(255) NOT NULL,
+    nit character varying(50),
+    telf character varying(50),
+    celular character varying(50),
+    email character varying(100),
+    pais character varying(50) DEFAULT 'Bolivia'::character varying,
+    depto character varying(50),
+    domicilio character varying(255),
+    limite_credito numeric(18,2) DEFAULT 0.00,
+    activo boolean DEFAULT true,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cliente_contacto» ya existe
+La orden era: CREATE TABLE public.cliente_contacto (
+    id integer NOT NULL,
+    id_cliente integer NOT NULL,
+    nombre character varying(255) NOT NULL,
+    cargo character varying(100),
+    telf character varying(50),
+    celular character varying(50),
+    email character varying(100),
+    es_principal boolean DEFAULT false,
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cliente_contacto_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.cliente_contacto_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cliente_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.cliente_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «dolar» ya existe
+La orden era: CREATE TABLE public.dolar (
+    fecha date NOT NULL,
+    ufv numeric(18,6) DEFAULT 0.000000 NOT NULL,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «dolar_det» ya existe
+La orden era: CREATE TABLE public.dolar_det (
+    id integer NOT NULL,
+    moneda character varying(50) NOT NULL,
+    fecha date NOT NULL,
+    compra numeric(18,6) DEFAULT 0.000000 NOT NULL,
+    venta numeric(18,6) DEFAULT 0.000000 NOT NULL,
+    promedio numeric(18,6) GENERATED ALWAYS AS (((compra + venta) / (2)::numeric)) STORED
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «dolar_det_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.dolar_det_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «librocompras» ya existe
+La orden era: CREATE TABLE public.librocompras (
+    id integer NOT NULL,
+    tipo_fac character varying(50) DEFAULT 'FACTURA'::character varying NOT NULL,
+    poliza character varying(50),
+    fecha date NOT NULL,
+    nit character varying(50) NOT NULL,
+    proveedor integer NOT NULL,
+    factura character varying(50) NOT NULL,
+    autorizacion character varying(50),
+    codigocontrol character varying(50),
+    importe numeric(18,2) DEFAULT 0.00 NOT NULL,
+    exento numeric(18,2) DEFAULT 0.00,
+    ice numeric(18,2) DEFAULT 0.00,
+    neto numeric(18,2) DEFAULT 0.00,
+    iva numeric(18,2) DEFAULT 0.00,
+    flete numeric(18,2) DEFAULT 0.00,
+    asiento character varying(50),
+    estado character varying(20) DEFAULT 'PENDIENTE'::character varying,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «librocompras_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.librocompras_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «libroventas» ya existe
+La orden era: CREATE TABLE public.libroventas (
+    id integer NOT NULL,
+    fecha date NOT NULL,
+    nit character varying(50) NOT NULL,
+    cliente integer NOT NULL,
+    razonsocial character varying(255) NOT NULL,
+    factura character varying(50) NOT NULL,
+    autorizacion character varying(50) NOT NULL,
+    importe numeric(18,2) DEFAULT 0.00 NOT NULL,
+    exento numeric(18,2) DEFAULT 0.00,
+    ice numeric(18,2) DEFAULT 0.00,
+    neto numeric(18,2) DEFAULT 0.00,
+    iva numeric(18,2) DEFAULT 0.00,
+    estado character varying(50) DEFAULT 'EMITIDA'::character varying,
+    asiento character varying(50),
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «libroventas_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.libroventas_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «moneda» ya existe
+La orden era: CREATE TABLE public.moneda (
+    codigo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    simbolo character varying(10),
+    activo boolean DEFAULT true,
+    es_moneda_base boolean DEFAULT false
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «movcuenta» ya existe
+La orden era: CREATE TABLE public.movcuenta (
+    codigo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    activo boolean DEFAULT true
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «nivel» ya existe
+La orden era: CREATE TABLE public.nivel (
+    nivel character varying(50) NOT NULL,
+    digitos integer NOT NULL,
+    descrip character varying(255),
+    activo boolean DEFAULT true,
+    CONSTRAINT nivel_digitos_check CHECK ((digitos > 0))
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «notificaciones» ya existe
+La orden era: CREATE TABLE public.notificaciones (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    mensaje text NOT NULL,
+    leida boolean DEFAULT false,
+    fecha timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «notificaciones_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.notificaciones_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «plancuenta» ya existe
+La orden era: CREATE TABLE public.plancuenta (
+    cuenta character varying(100) NOT NULL,
+    tipo_cuenta character varying(50) NOT NULL,
+    nivel character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    tipomov character varying(50) NOT NULL,
+    moneda character varying(50) NOT NULL,
+    fecha date DEFAULT CURRENT_DATE,
+    debebs numeric(18,2) DEFAULT 0.00,
+    haberbs numeric(18,2) DEFAULT 0.00,
+    debesus numeric(18,2) DEFAULT 0.00,
+    habersus numeric(18,2) DEFAULT 0.00,
+    activo boolean DEFAULT true,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «presupuesto» ya existe
+La orden era: CREATE TABLE public.presupuesto (
+    id integer NOT NULL,
+    cuenta character varying(100) NOT NULL,
+    anio integer NOT NULL,
+    fecha date DEFAULT CURRENT_DATE,
+    moneda character varying(50) NOT NULL,
+    total numeric(18,2) DEFAULT 0.00,
+    observaciones text,
+    estado character varying(20) DEFAULT 'ACTIVO'::character varying,
+    usuario character varying(50) NOT NULL,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «presupuesto_det» ya existe
+La orden era: CREATE TABLE public.presupuesto_det (
+    id integer NOT NULL,
+    id_presupuesto integer NOT NULL,
+    mes integer NOT NULL,
+    monto numeric(18,2) DEFAULT 0.00,
+    observaciones character varying(255),
+    CONSTRAINT presupuesto_det_mes_check CHECK (((mes >= 1) AND (mes <= 12)))
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «presupuesto_det_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.presupuesto_det_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «presupuesto_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.presupuesto_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «proveedor» ya existe
+La orden era: CREATE TABLE public.proveedor (
+    id integer NOT NULL,
+    razon character varying(255) NOT NULL,
+    nit character varying(50),
+    autorizacion character varying(50),
+    telf character varying(50),
+    celular character varying(50),
+    email character varying(100),
+    pais character varying(50) DEFAULT 'Bolivia'::character varying,
+    depto character varying(50),
+    domicilio character varying(255),
+    creditobs character varying(50),
+    creditusus character varying(50),
+    activo boolean DEFAULT true,
+    usuario character varying(50) NOT NULL,
+    fechasys timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «proveedor_contacto» ya existe
+La orden era: CREATE TABLE public.proveedor_contacto (
+    id integer NOT NULL,
+    id_proveedor integer NOT NULL,
+    nombre character varying(255) NOT NULL,
+    cargo character varying(100),
+    telf character varying(50),
+    celular character varying(50),
+    email character varying(100),
+    es_principal boolean DEFAULT false,
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «proveedor_contacto_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.proveedor_contacto_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «proveedor_id_seq» ya existe
+La orden era: CREATE SEQUENCE public.proveedor_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «tipoasiento» ya existe
+La orden era: CREATE TABLE public.tipoasiento (
+    codigo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «tipocuenta» ya existe
+La orden era: CREATE TABLE public.tipocuenta (
+    codigo character varying(50) NOT NULL,
+    descrip character varying(255) NOT NULL,
+    activo boolean DEFAULT true
+);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_clientes_contacto» ya existe
+La orden era: CREATE VIEW public.v_clientes_contacto AS
+ SELECT c.id,
+    c.razon,
+    c.nit,
+    c.telf,
+    c.email,
+    c.activo,
+    cc.nombre AS contacto_principal,
+    cc.celular AS contacto_celular
+   FROM (public.cliente c
+     LEFT JOIN public.cliente_contacto cc ON (((c.id = cc.id_cliente) AND (cc.es_principal = true))))
+  WHERE (c.activo = true);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_facturas_problemas» ya existe
+La orden era: CREATE VIEW public.v_facturas_problemas AS
+ SELECT 'COMPRA'::text AS tipo,
+    librocompras.id,
+    librocompras.factura,
+    librocompras.fecha,
+    librocompras.nit,
+    'IVA calculado incorrecto'::text AS problema,
+    librocompras.importe,
+    librocompras.iva,
+    (librocompras.neto * 0.13) AS iva_deberia_ser
+   FROM public.librocompras
+  WHERE ((abs((librocompras.iva - round((librocompras.neto * 0.13), 2))) > 0.01) AND ((librocompras.estado)::text <> 'ANULADO'::text))
+UNION ALL
+ SELECT 'VENTA'::text AS tipo,
+    libroventas.id,
+    libroventas.factura,
+    libroventas.fecha,
+    libroventas.nit,
+    'IVA calculado incorrecto'::text AS problema,
+    libroventas.importe,
+    libroventas.iva,
+    (libroventas.neto * 0.13) AS iva_deberia_ser
+   FROM public.libroventas
+  WHERE ((abs((libroventas.iva - round((libroventas.neto * 0.13), 2))) > 0.01) AND ((libroventas.estado)::text <> 'ANULADA'::text))
+UNION ALL
+ SELECT 'COMPRA'::text AS tipo,
+    librocompras.id,
+    librocompras.factura,
+    librocompras.fecha,
+    librocompras.nit,
+    'Fecha futura'::text AS problema,
+    librocompras.importe,
+    librocompras.iva,
+    0 AS iva_deberia_ser
+   FROM public.librocompras
+  WHERE (librocompras.fecha > CURRENT_DATE)
+UNION ALL
+ SELECT 'VENTA'::text AS tipo,
+    libroventas.id,
+    libroventas.factura,
+    libroventas.fecha,
+    libroventas.nit,
+    'Fecha futura'::text AS problema,
+    libroventas.importe,
+    libroventas.iva,
+    0 AS iva_deberia_ser
+   FROM public.libroventas
+  WHERE (libroventas.fecha > CURRENT_DATE);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_libro_compras_completo» ya existe
+La orden era: CREATE VIEW public.v_libro_compras_completo AS
+ SELECT lc.id,
+    lc.tipo_fac,
+    lc.poliza,
+    lc.fecha,
+    lc.nit,
+    lc.proveedor,
+    lc.factura,
+    lc.autorizacion,
+    lc.codigocontrol,
+    lc.importe,
+    lc.exento,
+    lc.ice,
+    lc.neto,
+    lc.iva,
+    lc.flete,
+    lc.asiento,
+    lc.estado,
+    lc.usuario,
+    lc.fechasys,
+    lc.fecha_modificacion,
+    p.razon AS razon_proveedor,
+    p.email AS email_proveedor
+   FROM (public.librocompras lc
+     JOIN public.proveedor p ON ((lc.proveedor = p.id)));
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_libro_ventas_completo» ya existe
+La orden era: CREATE VIEW public.v_libro_ventas_completo AS
+ SELECT lv.id,
+    lv.fecha,
+    lv.nit,
+    lv.cliente,
+    lv.razonsocial,
+    lv.factura,
+    lv.autorizacion,
+    lv.importe,
+    lv.exento,
+    lv.ice,
+    lv.neto,
+    lv.iva,
+    lv.estado,
+    lv.asiento,
+    lv.usuario,
+    lv.fechasys,
+    lv.fecha_modificacion,
+    c.razon AS razon_cliente,
+    c.email AS email_cliente
+   FROM (public.libroventas lv
+     JOIN public.cliente c ON ((lv.cliente = c.id)));
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_proveedores_contacto» ya existe
+La orden era: CREATE VIEW public.v_proveedores_contacto AS
+ SELECT p.id,
+    p.razon,
+    p.nit,
+    p.telf,
+    p.email,
+    p.activo,
+    pc.nombre AS contacto_principal,
+    pc.celular AS contacto_celular
+   FROM (public.proveedor p
+     LEFT JOIN public.proveedor_contacto pc ON (((p.id = pc.id_proveedor) AND (pc.es_principal = true))))
+  WHERE (p.activo = true);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_resumen_compras_periodo» ya existe
+La orden era: CREATE VIEW public.v_resumen_compras_periodo AS
+ SELECT date_trunc('month'::text, (fecha)::timestamp with time zone) AS periodo,
+    count(*) AS total_facturas,
+    count(
+        CASE
+            WHEN ((estado)::text = 'PENDIENTE'::text) THEN 1
+            ELSE NULL::integer
+        END) AS pendientes,
+    count(
+        CASE
+            WHEN ((estado)::text = 'CONTABILIZADO'::text) THEN 1
+            ELSE NULL::integer
+        END) AS contabilizadas,
+    count(
+        CASE
+            WHEN ((estado)::text = 'ANULADO'::text) THEN 1
+            ELSE NULL::integer
+        END) AS anuladas,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADO'::text) THEN importe
+            ELSE (0)::numeric
+        END) AS total_importe,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADO'::text) THEN iva
+            ELSE (0)::numeric
+        END) AS total_iva,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADO'::text) THEN neto
+            ELSE (0)::numeric
+        END) AS total_neto
+   FROM public.librocompras
+  GROUP BY (date_trunc('month'::text, (fecha)::timestamp with time zone))
+  ORDER BY (date_trunc('month'::text, (fecha)::timestamp with time zone)) DESC;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_resumen_ventas_periodo» ya existe
+La orden era: CREATE VIEW public.v_resumen_ventas_periodo AS
+ SELECT date_trunc('month'::text, (fecha)::timestamp with time zone) AS periodo,
+    count(*) AS total_facturas,
+    count(
+        CASE
+            WHEN ((estado)::text = 'EMITIDA'::text) THEN 1
+            ELSE NULL::integer
+        END) AS emitidas,
+    count(
+        CASE
+            WHEN ((estado)::text = 'COBRADA'::text) THEN 1
+            ELSE NULL::integer
+        END) AS cobradas,
+    count(
+        CASE
+            WHEN ((estado)::text = 'ANULADA'::text) THEN 1
+            ELSE NULL::integer
+        END) AS anuladas,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADA'::text) THEN importe
+            ELSE (0)::numeric
+        END) AS total_importe,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADA'::text) THEN iva
+            ELSE (0)::numeric
+        END) AS total_iva,
+    sum(
+        CASE
+            WHEN ((estado)::text <> 'ANULADA'::text) THEN neto
+            ELSE (0)::numeric
+        END) AS total_neto
+   FROM public.libroventas
+  GROUP BY (date_trunc('month'::text, (fecha)::timestamp with time zone))
+  ORDER BY (date_trunc('month'::text, (fecha)::timestamp with time zone)) DESC;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «v_saldos_cuenta» ya existe
+La orden era: CREATE VIEW public.v_saldos_cuenta AS
+ SELECT cuenta,
+    descrip,
+    tipo_cuenta,
+    (debebs - haberbs) AS saldo_bs,
+    (debesus - habersus) AS saldo_sus,
+    moneda,
+    activo
+   FROM public.plancuenta p
+  WHERE (activo = true);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «vista_asientoscondetalles» ya existe
+La orden era: CREATE VIEW public.vista_asientoscondetalles AS
+ SELECT a.codigo,
+    a.fecha,
+    a.glosa,
+    a.estado,
+    ad.cuenta,
+    pc.descrip AS cuenta_descripcion,
+    ad.debebs,
+    ad.haberbs,
+    ad.referencia
+   FROM ((public.asiento a
+     JOIN public.asiento_det ad ON (((a.codigo)::text = (ad.cod_asiento)::text)))
+     JOIN public.plancuenta pc ON (((ad.cuenta)::text = (pc.cuenta)::text)))
+  ORDER BY a.fecha, a.codigo, ad.orden;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «vista_balancecomprobacion» ya existe
+La orden era: CREATE VIEW public.vista_balancecomprobacion AS
+ SELECT cuenta,
+    descrip,
+    tipo_cuenta,
+    debebs,
+    haberbs,
+    (debebs - haberbs) AS saldo
+   FROM public.plancuenta p
+  WHERE (activo = true)
+  ORDER BY cuenta;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «vista_estadoresultadosnov2024» ya existe
+La orden era: CREATE VIEW public.vista_estadoresultadosnov2024 AS
+ SELECT 'INGRESOS'::text AS concepto,
+    sum(lv.neto) AS monto
+   FROM public.libroventas lv
+  WHERE ((lv.fecha >= '2024-11-01'::date) AND (lv.fecha <= '2024-11-30'::date))
+UNION ALL
+ SELECT 'COSTOS DE VENTA'::text AS concepto,
+    sum(ad.debebs) AS monto
+   FROM public.asiento_det ad
+  WHERE ((ad.cuenta)::text ~~ '51%'::text)
+UNION ALL
+ SELECT 'GASTOS OPERACIONALES'::text AS concepto,
+    sum(ad.debebs) AS monto
+   FROM public.asiento_det ad
+  WHERE ((ad.cuenta)::text ~~ '52%'::text);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «vista_resumencomprasporproveedor» ya existe
+La orden era: CREATE VIEW public.vista_resumencomprasporproveedor AS
+ SELECT p.razon,
+    count(lc.id) AS num_facturas,
+    sum(lc.neto) AS total_neto,
+    sum(lc.iva) AS total_iva,
+    sum(lc.importe) AS total_importe
+   FROM (public.librocompras lc
+     JOIN public.proveedor p ON ((lc.proveedor = p.id)))
+  GROUP BY p.id, p.razon
+  ORDER BY (sum(lc.importe)) DESC;
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «vista_resumenventasporcliente» ya existe
+La orden era: CREATE VIEW public.vista_resumenventasporcliente AS
+ SELECT c.razon,
+    count(lv.id) AS num_facturas,
+    sum(lv.neto) AS total_neto,
+    sum(lv.iva) AS total_iva,
+    sum(lv.importe) AS total_importe
+   FROM (public.libroventas lv
+     JOIN public.cliente c ON ((lv.cliente = c.id)))
+  GROUP BY c.id, c.razon
+  ORDER BY (sum(lv.importe)) DESC;
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «asiento_det»
+La orden era: ALTER TABLE ONLY public.asiento_det
+    ADD CONSTRAINT asiento_det_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «asiento»
+La orden era: ALTER TABLE ONLY public.asiento
+    ADD CONSTRAINT asiento_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «asientotemplate_det»
+La orden era: ALTER TABLE ONLY public.asientotemplate_det
+    ADD CONSTRAINT asientotemplate_det_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «asientotemplate»
+La orden era: ALTER TABLE ONLY public.asientotemplate
+    ADD CONSTRAINT asientotemplate_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «cencostos»
+La orden era: ALTER TABLE ONLY public.cencostos
+    ADD CONSTRAINT cencostos_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «cliente_contacto»
+La orden era: ALTER TABLE ONLY public.cliente_contacto
+    ADD CONSTRAINT cliente_contacto_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «cliente_nit_key» ya existe
+La orden era: ALTER TABLE ONLY public.cliente
+    ADD CONSTRAINT cliente_nit_key UNIQUE (nit);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «cliente»
+La orden era: ALTER TABLE ONLY public.cliente
+    ADD CONSTRAINT cliente_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «dolar_det»
+La orden era: ALTER TABLE ONLY public.dolar_det
+    ADD CONSTRAINT dolar_det_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «dolar»
+La orden era: ALTER TABLE ONLY public.dolar
+    ADD CONSTRAINT dolar_pkey PRIMARY KEY (fecha);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «librocompras»
+La orden era: ALTER TABLE ONLY public.librocompras
+    ADD CONSTRAINT librocompras_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «libroventas»
+La orden era: ALTER TABLE ONLY public.libroventas
+    ADD CONSTRAINT libroventas_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «moneda»
+La orden era: ALTER TABLE ONLY public.moneda
+    ADD CONSTRAINT moneda_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «movcuenta»
+La orden era: ALTER TABLE ONLY public.movcuenta
+    ADD CONSTRAINT movcuenta_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «nivel»
+La orden era: ALTER TABLE ONLY public.nivel
+    ADD CONSTRAINT nivel_pkey PRIMARY KEY (nivel);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «notificaciones»
+La orden era: ALTER TABLE ONLY public.notificaciones
+    ADD CONSTRAINT notificaciones_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «plancuenta»
+La orden era: ALTER TABLE ONLY public.plancuenta
+    ADD CONSTRAINT plancuenta_pkey PRIMARY KEY (cuenta);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «presupuesto_det»
+La orden era: ALTER TABLE ONLY public.presupuesto_det
+    ADD CONSTRAINT presupuesto_det_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «presupuesto»
+La orden era: ALTER TABLE ONLY public.presupuesto
+    ADD CONSTRAINT presupuesto_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «proveedor_contacto»
+La orden era: ALTER TABLE ONLY public.proveedor_contacto
+    ADD CONSTRAINT proveedor_contacto_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «proveedor_nit_key» ya existe
+La orden era: ALTER TABLE ONLY public.proveedor
+    ADD CONSTRAINT proveedor_nit_key UNIQUE (nit);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «proveedor»
+La orden era: ALTER TABLE ONLY public.proveedor
+    ADD CONSTRAINT proveedor_pkey PRIMARY KEY (id);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «tipoasiento»
+La orden era: ALTER TABLE ONLY public.tipoasiento
+    ADD CONSTRAINT tipoasiento_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  no se permiten múltiples llaves primarias para la tabla «tipocuenta»
+La orden era: ALTER TABLE ONLY public.tipocuenta
+    ADD CONSTRAINT tipocuenta_pkey PRIMARY KEY (codigo);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «uk_compras_factura» ya existe
+La orden era: ALTER TABLE ONLY public.librocompras
+    ADD CONSTRAINT uk_compras_factura UNIQUE (proveedor, factura, autorizacion);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «uk_moneda_fecha» ya existe
+La orden era: ALTER TABLE ONLY public.dolar_det
+    ADD CONSTRAINT uk_moneda_fecha UNIQUE (moneda, fecha);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «uk_presupuesto_cuenta_anio» ya existe
+La orden era: ALTER TABLE ONLY public.presupuesto
+    ADD CONSTRAINT uk_presupuesto_cuenta_anio UNIQUE (cuenta, anio);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «uk_presupuesto_mes» ya existe
+La orden era: ALTER TABLE ONLY public.presupuesto_det
+    ADD CONSTRAINT uk_presupuesto_mes UNIQUE (id_presupuesto, mes);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «uk_ventas_factura» ya existe
+La orden era: ALTER TABLE ONLY public.libroventas
+    ADD CONSTRAINT uk_ventas_factura UNIQUE (factura, autorizacion);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asiento_estado» ya existe
+La orden era: CREATE INDEX idx_asiento_estado ON public.asiento USING btree (estado);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asiento_fecha» ya existe
+La orden era: CREATE INDEX idx_asiento_fecha ON public.asiento USING btree (fecha);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asiento_tipo» ya existe
+La orden era: CREATE INDEX idx_asiento_tipo ON public.asiento USING btree (tipo);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asiento_usuario» ya existe
+La orden era: CREATE INDEX idx_asiento_usuario ON public.asiento USING btree (usuario);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asientodet_cencosto» ya existe
+La orden era: CREATE INDEX idx_asientodet_cencosto ON public.asiento_det USING btree (cencosto);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_asientodet_cuenta» ya existe
+La orden era: CREATE INDEX idx_asientodet_cuenta ON public.asiento_det USING btree (cuenta);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_cliente_activo» ya existe
+La orden era: CREATE INDEX idx_cliente_activo ON public.cliente USING btree (activo);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_cliente_nit» ya existe
+La orden era: CREATE INDEX idx_cliente_nit ON public.cliente USING btree (nit);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_cliente_razon» ya existe
+La orden era: CREATE INDEX idx_cliente_razon ON public.cliente USING btree (razon);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_librocompras_estado» ya existe
+La orden era: CREATE INDEX idx_librocompras_estado ON public.librocompras USING btree (estado);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_librocompras_fecha» ya existe
+La orden era: CREATE INDEX idx_librocompras_fecha ON public.librocompras USING btree (fecha);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_librocompras_proveedor» ya existe
+La orden era: CREATE INDEX idx_librocompras_proveedor ON public.librocompras USING btree (proveedor);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_libroventas_cliente» ya existe
+La orden era: CREATE INDEX idx_libroventas_cliente ON public.libroventas USING btree (cliente);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_libroventas_estado» ya existe
+La orden era: CREATE INDEX idx_libroventas_estado ON public.libroventas USING btree (estado);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_libroventas_fecha» ya existe
+La orden era: CREATE INDEX idx_libroventas_fecha ON public.libroventas USING btree (fecha);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_plancuenta_activo» ya existe
+La orden era: CREATE INDEX idx_plancuenta_activo ON public.plancuenta USING btree (activo);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_plancuenta_nivel» ya existe
+La orden era: CREATE INDEX idx_plancuenta_nivel ON public.plancuenta USING btree (nivel);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_plancuenta_tipo» ya existe
+La orden era: CREATE INDEX idx_plancuenta_tipo ON public.plancuenta USING btree (tipo_cuenta);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_proveedor_activo» ya existe
+La orden era: CREATE INDEX idx_proveedor_activo ON public.proveedor USING btree (activo);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_proveedor_nit» ya existe
+La orden era: CREATE INDEX idx_proveedor_nit ON public.proveedor USING btree (nit);
+
+
+pg_restore: error: could not execute query: ERROR:  la relación «idx_proveedor_razon» ya existe
+La orden era: CREATE INDEX idx_proveedor_razon ON public.proveedor USING btree (razon);
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe un trigger «trg_cliente_update» para la relación «cliente»
+La orden era: CREATE TRIGGER trg_cliente_update BEFORE UPDATE ON public.cliente FOR EACH ROW EXECUTE FUNCTION public.actualizar_fecha_modificacion();
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe un trigger «trg_librocompras_update» para la relación «librocompras»
+La orden era: CREATE TRIGGER trg_librocompras_update BEFORE UPDATE ON public.librocompras FOR EACH ROW EXECUTE FUNCTION public.actualizar_fecha_modificacion();
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe un trigger «trg_libroventas_update» para la relación «libroventas»
+La orden era: CREATE TRIGGER trg_libroventas_update BEFORE UPDATE ON public.libroventas FOR EACH ROW EXECUTE FUNCTION public.actualizar_fecha_modificacion();
+
+
+pg_restore: error: could not execute query: ERROR:  ya existe un trigger «trg_proveedor_update» para la relación «proveedor»
+La orden era: CREATE TRIGGER trg_proveedor_update BEFORE UPDATE ON public.proveedor FOR EACH ROW EXECUTE FUNCTION public.actualizar_fecha_modificacion();
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asiento_cuenta» para la relación «asiento» ya existe
+La orden era: ALTER TABLE ONLY public.asiento
+    ADD CONSTRAINT fk_asiento_cuenta FOREIGN KEY (cta) REFERENCES public.plancuenta(cuenta) ON DELETE SET NULL;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asiento_tipo» para la relación «asiento» ya existe
+La orden era: ALTER TABLE ONLY public.asiento
+    ADD CONSTRAINT fk_asiento_tipo FOREIGN KEY (tipo) REFERENCES public.tipoasiento(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientodet_asiento» para la relación «asiento_det» ya existe
+La orden era: ALTER TABLE ONLY public.asiento_det
+    ADD CONSTRAINT fk_asientodet_asiento FOREIGN KEY (cod_asiento) REFERENCES public.asiento(codigo) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientodet_cencosto» para la relación «asiento_det» ya existe
+La orden era: ALTER TABLE ONLY public.asiento_det
+    ADD CONSTRAINT fk_asientodet_cencosto FOREIGN KEY (cencosto) REFERENCES public.cencostos(codigo) ON DELETE SET NULL;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientodet_plancuenta» para la relación «asiento_det» ya existe
+La orden era: ALTER TABLE ONLY public.asiento_det
+    ADD CONSTRAINT fk_asientodet_plancuenta FOREIGN KEY (cuenta) REFERENCES public.plancuenta(cuenta) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientotemplate_tipo» para la relación «asientotemplate» ya existe
+La orden era: ALTER TABLE ONLY public.asientotemplate
+    ADD CONSTRAINT fk_asientotemplate_tipo FOREIGN KEY (tipo) REFERENCES public.tipoasiento(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientotemplatedet_cencos» para la relación «asientotemplate_det» ya existe
+La orden era: ALTER TABLE ONLY public.asientotemplate_det
+    ADD CONSTRAINT fk_asientotemplatedet_cencos FOREIGN KEY (cencostos) REFERENCES public.cencostos(codigo) ON DELETE SET NULL;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientotemplatedet_cuenta» para la relación «asientotemplate_det» ya existe
+La orden era: ALTER TABLE ONLY public.asientotemplate_det
+    ADD CONSTRAINT fk_asientotemplatedet_cuenta FOREIGN KEY (cuenta) REFERENCES public.plancuenta(cuenta) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_asientotemplatedet_tmpl» para la relación «asientotemplate_det» ya existe
+La orden era: ALTER TABLE ONLY public.asientotemplate_det
+    ADD CONSTRAINT fk_asientotemplatedet_tmpl FOREIGN KEY (id_template) REFERENCES public.asientotemplate(id) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_cliente_contacto_cli» para la relación «cliente_contacto» ya existe
+La orden era: ALTER TABLE ONLY public.cliente_contacto
+    ADD CONSTRAINT fk_cliente_contacto_cli FOREIGN KEY (id_cliente) REFERENCES public.cliente(id) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_dolardet_dolar» para la relación «dolar_det» ya existe
+La orden era: ALTER TABLE ONLY public.dolar_det
+    ADD CONSTRAINT fk_dolardet_dolar FOREIGN KEY (fecha) REFERENCES public.dolar(fecha) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_dolardet_moneda» para la relación «dolar_det» ya existe
+La orden era: ALTER TABLE ONLY public.dolar_det
+    ADD CONSTRAINT fk_dolardet_moneda FOREIGN KEY (moneda) REFERENCES public.moneda(codigo) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_librocompras_asiento» para la relación «librocompras» ya existe
+La orden era: ALTER TABLE ONLY public.librocompras
+    ADD CONSTRAINT fk_librocompras_asiento FOREIGN KEY (asiento) REFERENCES public.asiento(codigo) ON DELETE SET NULL;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_librocompras_prov» para la relación «librocompras» ya existe
+La orden era: ALTER TABLE ONLY public.librocompras
+    ADD CONSTRAINT fk_librocompras_prov FOREIGN KEY (proveedor) REFERENCES public.proveedor(id) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_libroventas_asiento» para la relación «libroventas» ya existe
+La orden era: ALTER TABLE ONLY public.libroventas
+    ADD CONSTRAINT fk_libroventas_asiento FOREIGN KEY (asiento) REFERENCES public.asiento(codigo) ON DELETE SET NULL;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_libroventas_cli» para la relación «libroventas» ya existe
+La orden era: ALTER TABLE ONLY public.libroventas
+    ADD CONSTRAINT fk_libroventas_cli FOREIGN KEY (cliente) REFERENCES public.cliente(id) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_plancuenta_moneda» para la relación «plancuenta» ya existe
+La orden era: ALTER TABLE ONLY public.plancuenta
+    ADD CONSTRAINT fk_plancuenta_moneda FOREIGN KEY (moneda) REFERENCES public.moneda(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_plancuenta_nivel» para la relación «plancuenta» ya existe
+La orden era: ALTER TABLE ONLY public.plancuenta
+    ADD CONSTRAINT fk_plancuenta_nivel FOREIGN KEY (nivel) REFERENCES public.nivel(nivel) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_plancuenta_tipocta» para la relación «plancuenta» ya existe
+La orden era: ALTER TABLE ONLY public.plancuenta
+    ADD CONSTRAINT fk_plancuenta_tipocta FOREIGN KEY (tipo_cuenta) REFERENCES public.tipocuenta(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_plancuenta_tipomov» para la relación «plancuenta» ya existe
+La orden era: ALTER TABLE ONLY public.plancuenta
+    ADD CONSTRAINT fk_plancuenta_tipomov FOREIGN KEY (tipomov) REFERENCES public.movcuenta(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_presupuesto_cuenta» para la relación «presupuesto» ya existe
+La orden era: ALTER TABLE ONLY public.presupuesto
+    ADD CONSTRAINT fk_presupuesto_cuenta FOREIGN KEY (cuenta) REFERENCES public.plancuenta(cuenta) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_presupuesto_moneda» para la relación «presupuesto» ya existe
+La orden era: ALTER TABLE ONLY public.presupuesto
+    ADD CONSTRAINT fk_presupuesto_moneda FOREIGN KEY (moneda) REFERENCES public.moneda(codigo) ON DELETE RESTRICT;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_presupuestodet_pres» para la relación «presupuesto_det» ya existe
+La orden era: ALTER TABLE ONLY public.presupuesto_det
+    ADD CONSTRAINT fk_presupuestodet_pres FOREIGN KEY (id_presupuesto) REFERENCES public.presupuesto(id) ON DELETE CASCADE;
+
+
+pg_restore: error: could not execute query: ERROR:  la restricción «fk_proveedor_contacto_prov» para la relación «proveedor_contacto» ya existe
+La orden era: ALTER TABLE ONLY public.proveedor_contacto
+    ADD CONSTRAINT fk_proveedor_contacto_prov FOREIGN KEY (id_proveedor) REFERENCES public.proveedor(id) ON DELETE CASCADE;
+
+
+pg_restore: precauci�n: errores ignorados durante la recuperaci�n: 138

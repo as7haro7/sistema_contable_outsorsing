@@ -1,0 +1,96 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container py-4">
+  <h2>Editar {{ tipo|capitalize }}</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Razón Social</label>
+      <input
+        type="text"
+        name="razon"
+        class="form-control"
+        value="{{ tercero.razon }}"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">NIT</label>
+      <input
+        type="text"
+        name="nit"
+        class="form-control"
+        value="{{ tercero.nit }}"
+        required
+      />
+    </div>
+    {% if tipo == 'proveedor' %}
+    <div class="mb-3">
+      <label class="form-label">Autorización</label>
+      <input
+        type="text"
+        name="autorizacion"
+        class="form-control"
+        value="{{ tercero.autorizacion }}"
+      />
+    </div>
+    {% endif %}
+    <div class="mb-3">
+      <label class="form-label">Teléfono</label>
+      <input
+        type="text"
+        name="telf"
+        class="form-control"
+        value="{{ tercero.telf }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Celular</label>
+      <input
+        type="text"
+        name="celular"
+        class="form-control"
+        value="{{ tercero.celular }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input
+        type="email"
+        name="email"
+        class="form-control"
+        value="{{ tercero.email }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">País</label>
+      <input
+        type="text"
+        name="pais"
+        class="form-control"
+        value="{{ tercero.pais }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Departamento</label>
+      <input
+        type="text"
+        name="depto"
+        class="form-control"
+        value="{{ tercero.depto }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Domicilio</label>
+      <input
+        type="text"
+        name="domicilio"
+        class="form-control"
+        value="{{ tercero.domicilio }}"
+      />
+    </div>
+    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+    <a href="{{ url_for('terceros.index') }}" class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </form>
+</div>
+{% endblock %}

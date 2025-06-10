@@ -1,0 +1,57 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Libro Mayor</h2>
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-auto">
+      <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+    </div>
+    <div class="col-auto">
+      <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+    </div>
+    <div class="col-auto">
+      <select name="cuenta" class="form-select">
+        <option value="">Todas las cuentas</option>
+        {% for c in cuentas_con_movimientos %}
+        <option value="{{ c.cuenta }}" {% if cuenta == c.cuenta %}selected{% endif %}>{{ c.cuenta }} - {{ c.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Cuenta</th>
+          <th>Descripción</th>
+          <th>Fecha</th>
+          <th>Código</th>
+          <th>Glosa</th>
+          <th>Debe (Bs)</th>
+          <th>Haber (Bs)</th>
+          <th>Saldo (Bs)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cuenta, datos in mayor.items() %}
+          {% for mov in datos.movimientos %}
+            <tr>
+              <td>{{ datos.cuenta }}</td>
+              <td>{{ datos.cuenta_descrip }}</td>
+              <td>{{ mov.fecha }}</td>
+              <td>{{ mov.codigo }}</td>
+              <td>{{ mov.glosa }}</td>
+              <td class="text-end">{{ mov.debebs|float|round(2) }}</td>
+              <td class="text-end">{{ mov.haberbs|float|round(2) }}</td>
+              <td class="text-end">{{ (mov.debebs - mov.haberbs)|float|round(2) }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

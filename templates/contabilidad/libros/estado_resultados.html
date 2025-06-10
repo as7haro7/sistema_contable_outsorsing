@@ -1,0 +1,76 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Estado de Resultados</h2>
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-auto">
+      <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+    </div>
+    <div class="col-auto">
+      <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+    </div>
+    <div class="col-auto">
+      <select name="moneda" class="form-select">
+        <option value="BOB" {% if moneda == 'BOB' %}selected{% endif %}>Bolivianos</option>
+        <option value="USD" {% if moneda == 'USD' %}selected{% endif %}>Dólares</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Ingresos</h5>
+      <ul class="list-group mb-3">
+        {% for item in ingresos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ item.cuenta }} - {{ item.descrip }}
+          <span>{{ item.saldo|float|round(2) }}</span>
+        </li>
+        {% endfor %}
+        <li class="list-group-item active d-flex justify-content-between align-items-center">
+          Total Ingresos
+          <span>{{ total_ingresos|float|round(2) }}</span>
+        </li>
+      </ul>
+      <h5>Costos</h5>
+      <ul class="list-group mb-3">
+        {% for item in costos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ item.cuenta }} - {{ item.descrip }}
+          <span>{{ item.saldo|float|round(2) }}</span>
+        </li>
+        {% endfor %}
+        <li class="list-group-item active d-flex justify-content-between align-items-center">
+          Total Costos
+          <span>{{ total_costos|float|round(2) }}</span>
+        </li>
+      </ul>
+      <h5>Gastos</h5>
+      <ul class="list-group mb-3">
+        {% for item in gastos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ item.cuenta }} - {{ item.descrip }}
+          <span>{{ item.saldo|float|round(2) }}</span>
+        </li>
+        {% endfor %}
+        <li class="list-group-item active d-flex justify-content-between align-items-center">
+          Total Gastos
+          <span>{{ total_gastos|float|round(2) }}</span>
+        </li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Utilidad Bruta</h5>
+      <div class="alert alert-info">
+        {{ utilidad_bruta|float|round(2) }}
+      </div>
+      <h5>Utilidad Neta</h5>
+      <div class="alert alert-success">
+        {{ utilidad_neta|float|round(2) }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

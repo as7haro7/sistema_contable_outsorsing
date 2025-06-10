@@ -1,0 +1,222 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container py-4">
+  <header class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+      <h1 class="h2 mb-1 text-gradient-primary">Plan de Cuentas</h1>
+      <p class="text-muted mb-0">Gestión completa del plan contable</p>
+    </div>
+    <a
+      href="{{ url_for('plancuentas.crear') }}"
+      class="btn btn-primary rounded-pill px-4 shadow-sm"
+    >
+      <i class="bi bi-plus-lg me-2"></i>Nueva Cuenta
+    </a>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }} alert-dismissible fade show rounded-3 shadow-sm"
+    role="alert"
+  >
+    <div class="d-flex align-items-center">
+      <i
+        class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category == 'danger' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} me-2"
+      ></i>
+      <span>{{ message }}</span>
+    </div>
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Cerrar"
+    ></button>
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <div class="card border-0 rounded-4 shadow-lg overflow-hidden">
+    <div class="card-header bg-white py-3 border-0">
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Listado de Cuentas</h2>
+        <div class="input-group input-group-sm" style="width: 250px">
+          <span class="input-group-text bg-white border-end-0"
+            ><i class="bi bi-search"></i
+          ></span>
+          <input
+            type="text"
+            class="form-control border-start-0"
+            placeholder="Buscar cuenta..."
+            id="searchInput"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <ul class="list-group list-group-flush" id="accountList">
+          {% macro render_arbol(cuentas, level=0) %} {% for cuenta in cuentas %}
+          <li
+            class="list-group-item d-flex justify-content-between align-items-center py-3 ps-{{ level * 4 }} hover-highlight"
+          >
+            <div class="d-flex align-items-center">
+              <div class="account-indicator me-3">
+                <i class="bi bi-circle-fill text-primary opacity-25"></i>
+              </div>
+              <div>
+                <h3 class="h6 mb-1">
+                  <span class="text-primary fw-bold">{{ cuenta.cuenta }}</span>
+                  -
+                  <span class="text-dark">{{ cuenta.descrip }}</span>
+                </h3>
+                <div class="d-flex flex-wrap gap-2 mt-1">
+                  {% if cuenta.tipo_cuenta_descrip %}
+                  <span
+                    class="badge rounded-pill bg-light text-dark border border-1"
+                  >
+                    <i class="bi bi-tag-fill text-primary me-1"></i>{{
+                    cuenta.tipo_cuenta_descrip }}
+                  </span>
+                  {% endif %} {% if cuenta.moneda_descrip %}
+                  <span
+                    class="badge rounded-pill bg-light text-dark border border-1"
+                  >
+                    <i class="bi bi-currency-exchange text-success me-1"></i>{{
+                    cuenta.moneda_descrip }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="btn-group btn-group-sm" role="group">
+              <a
+                href="{{ url_for('plancuentas.detalle', codigo=cuenta.cuenta) }}"
+                class="btn btn-outline-info rounded-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Ver Detalles"
+              >
+                Ver Detalle
+                <i class="bi bi-eye"></i>
+              </a>
+              <a
+                href="{{ url_for('plancuentas.editar', codigo=cuenta.cuenta) }}"
+                class="btn btn-outline-warning rounded-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Editar Cuenta"
+                >Editar
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form
+                action="{{ url_for('plancuentas.eliminar', codigo=cuenta.cuenta) }}"
+                method="post"
+                class="d-inline"
+                onsubmit="return confirm('¿Estás seguro de eliminar la cuenta {{ cuenta.cuenta }} - {{ cuenta.descrip }} y todas sus subcuentas?');"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-outline-danger rounded-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title="Eliminar Cuenta"
+                >
+                  Eliminar
+                </button>
+                <i class="bi bi-trash"></i>
+              </form>
+            </div>
+          </li>
+          {% if cuenta.hijos and cuenta.hijos|length > 0 %} {{
+          render_arbol(cuenta.hijos, level + 1) }} {% endif %} {% endfor %} {%
+          endmacro %} {{ render_arbol(arbol_cuentas) }}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card-footer bg-white py-3 border-0">
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted"
+          >Total de cuentas:
+          <span class="fw-bold" id="totalAccounts"
+            >{{ arbol_cuentas|length }}</span
+          ></small
+        >
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item disabled">
+              <a class="page-link" href="#" tabindex="-1" aria-disabled="true"
+                >Anterior</a
+              >
+            </li>
+            <li class="page-item active">
+              <a class="page-link" href="#">1</a>
+            </li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#">Siguiente</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .text-gradient-primary {
+    background: linear-gradient(90deg, #0d6efd 0%, #20c997 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hover-highlight:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+  }
+
+  .rounded-4 {
+    border-radius: 1rem !important;
+  }
+
+  .account-indicator i {
+    font-size: 0.5rem;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Función de búsqueda
+    document
+      .getElementById("searchInput")
+      .addEventListener("input", function () {
+        const searchTerm = this.value.toLowerCase();
+        const items = document.querySelectorAll("#accountList li");
+        let visibleCount = 0;
+
+        items.forEach((item) => {
+          const text = item.textContent.toLowerCase();
+          if (text.includes(searchTerm)) {
+            item.style.display = "";
+            visibleCount++;
+          } else {
+            item.style.display = "none";
+          }
+        });
+
+        document.getElementById("totalAccounts").textContent = visibleCount;
+      });
+  });
+</script>
+{% endblock %}

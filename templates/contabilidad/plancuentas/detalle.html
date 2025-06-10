@@ -1,0 +1,26 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Detalle de Cuenta</h2>
+  <ul class="list-group">
+    <li class="list-group-item">
+      <strong>Código:</strong> {{ cuenta.cuenta }}
+    </li>
+    <li class="list-group-item">
+      <strong>Descripción:</strong> {{ cuenta.descrip }}
+    </li>
+    <li class="list-group-item">
+      <strong>Tipo de Cuenta:</strong> {{ cuenta.tipo_cuenta_descrip }}
+    </li>
+    <li class="list-group-item">
+      <strong>Moneda:</strong> {{ cuenta.moneda_descrip }}
+    </li>
+    <li class="list-group-item">
+      <strong>Tipo de Movimiento:</strong> {{ cuenta.tipomov_descrip }}
+    </li>
+    <li class="list-group-item"><strong>Nivel:</strong> {{ cuenta.nivel }}</li>
+  </ul>
+  <a href="{{ url_for('plancuentas.index') }}" class="btn btn-secondary mt-3"
+    >Volver</a
+  >
+</div>
+{% endblock %}

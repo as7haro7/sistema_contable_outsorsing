@@ -1,0 +1,114 @@
+{% extends "base/base.html" %}
+{% block title %}Panel de Administración{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mb-3">Panel de Administración</h2>
+  <p class="mb-4">
+    Bienvenido al sistema de gestión contable multiempresa. Desde aquí puedes
+    administrar la configuración global, usuarios, empresas y respaldos.
+  </p>
+
+  <div class="row g-4 mb-4 align-items-center"> {# Using g-4 for consistent gap #}
+    <div class="col-md-4">
+      <div class="d-flex flex-column h-100"> {# Flex column to ensure cards fill height #}
+        <div class="card border-primary shadow-sm flex-grow-1 mb-3"> {# flex-grow-1 for consistent height #}
+          <div class="card-body text-center">
+            <h6 class="card-subtitle mb-2 text-muted">Empresas</h6>
+            <span class="display-6 fw-bold text-primary">{{ estadisticas.total_empresas }}</span>
+            <div>
+              <span class="fw-bold text-success">{{ estadisticas.empresas_activas }}</span>
+              <small class="text-muted">Activas</small> |
+              <span class="fw-bold text-danger">{{ estadisticas.empresas_inactivas }}</span>
+              <small class="text-muted">Inactivas</small>
+            </div>
+            {# Optional: Add a button if relevant #}
+            {# <a href="#" class="btn btn-sm btn-outline-primary mt-3">Ver Empresas</a> #}
+          </div>
+        </div>
+        <div class="card border-success shadow-sm flex-grow-1 mb-3">
+          <div class="card-body text-center">
+            <h6 class="card-subtitle mb-2 text-muted">Usuarios</h6>
+            <span class="display-6 fw-bold text-success">{{ total_usuarios }}</span>
+            {# Optional: Add a button if relevant #}
+            {# <a href="#" class="btn btn-sm btn-outline-success mt-3">Administrar Usuarios</a> #}
+          </div>
+        </div>
+        <div class="card border-warning shadow-sm flex-grow-1">
+          <div class="card-body text-center">
+            <h6 class="card-subtitle mb-2 text-muted">Gestiones</h6>
+            <span class="display-6 fw-bold text-warning">{{ total_gestiones }}</span>
+            {# Optional: Add a button if relevant #}
+            {# <a href="#" class="btn btn-sm btn-outline-warning mt-3">Ver Gestiones</a> #}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8 d-flex align-items-center justify-content-center">
+      <div class="card border-0 shadow-sm w-100 h-100 d-flex flex-column"> {# Added h-100 and flex-column #}
+        <div class="card-header bg-white border-bottom-0 text-center py-3"> {# Increased vertical padding #}
+          <h5 class="card-title fw-light mb-0">
+            Empresas activas vs inactivas
+          </h5>
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center flex-grow-1"> {# Centered content #}
+          <canvas
+            id="graficaEmpresas"
+            style="width: 100%; max-width: 380px; max-height: 280px;" {# Increased max-width/height for chart #}
+          ></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById("graficaEmpresas").getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Activas", "Inactivas"],
+        datasets: [{
+          data: [{{ estadisticas.empresas_activas }}, {{ estadisticas.empresas_inactivas }}],
+          backgroundColor: [
+            "rgba(25, 135, 84, 0.8)", // verde
+            "rgba(220, 53, 69, 0.8)"  // rojo
+          ],
+          borderColor: [
+            "rgba(25, 135, 84, 1)",
+            "rgba(220, 53, 69, 1)"
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // Allow chart to fit container better
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 14 }
+            }
+          },
+          tooltip: { // Optional: Customize tooltips for better UX
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += context.parsed + ' (' + ((context.parsed / context.dataset.data.reduce((a, b) => a + b, 0)) * 100).toFixed(1) + '%)';
+                }
+                return label;
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

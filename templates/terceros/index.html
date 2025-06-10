@@ -1,0 +1,103 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">Clientes</h2>
+  <a
+    href="{{ url_for('terceros.crear', tipo='cliente') }}"
+    class="btn btn-primary mb-2"
+    >Nuevo Cliente</a
+  >
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr>
+        <th>Razón Social</th>
+        <th>NIT</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tercero in terceros if tercero.tipo == 'cliente' %}
+      <tr>
+        <td>{{ tercero.razon }}</td>
+        <td>{{ tercero.nit }}</td>
+        <td>{{ tercero.telf }}</td>
+        <td>{{ tercero.email }}</td>
+        <td>
+          <a
+            href="{{ url_for('terceros.ver', tipo='cliente', tercero_id=tercero.id) }}"
+            class="btn btn-info btn-sm"
+            >Ver</a
+          >
+          <a
+            href="{{ url_for('terceros.editar', tipo='cliente', tercero_id=tercero.id) }}"
+            class="btn btn-warning btn-sm"
+            >Editar</a
+          >
+          <form
+            action="{{ url_for('terceros.eliminar', tipo='cliente', tercero_id=tercero.id) }}"
+            method="post"
+            style="display: inline"
+            onsubmit="return confirm('¿Eliminar este cliente?');"
+          >
+            <button type="submit" class="btn btn-danger btn-sm">
+              Eliminar
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="mb-4 mt-5">Proveedores</h2>
+  <a
+    href="{{ url_for('terceros.crear', tipo='proveedor') }}"
+    class="btn btn-success mb-2"
+    >Nuevo Proveedor</a
+  >
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr>
+        <th>Razón Social</th>
+        <th>NIT</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tercero in terceros if tercero.tipo == 'proveedor' %}
+      <tr>
+        <td>{{ tercero.razon }}</td>
+        <td>{{ tercero.nit }}</td>
+        <td>{{ tercero.telf }}</td>
+        <td>{{ tercero.email }}</td>
+        <td>
+          <a
+            href="{{ url_for('terceros.ver', tipo='proveedor', tercero_id=tercero.id) }}"
+            class="btn btn-info btn-sm"
+            >Ver</a
+          >
+          <a
+            href="{{ url_for('terceros.editar', tipo='proveedor', tercero_id=tercero.id) }}"
+            class="btn btn-warning btn-sm"
+            >Editar</a
+          >
+          <form
+            action="{{ url_for('terceros.eliminar', tipo='proveedor', tercero_id=tercero.id) }}"
+            method="post"
+            style="display: inline"
+            onsubmit="return confirm('¿Eliminar este proveedor?');"
+          >
+            <button type="submit" class="btn btn-danger btn-sm">
+              Eliminar
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

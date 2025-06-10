@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %} {% block content %}
+<div class="container mt-4">
+  <h3>Detalle de Venta</h3>
+  <table class="table table-bordered">
+    <tr>
+      <th>Cliente</th>
+      <td>{{ venta.razon or venta.cliente }}</td>
+    </tr>
+    <tr>
+      <th>Fecha</th>
+      <td>{{ venta.fecha }}</td>
+    </tr>
+    <tr>
+      <th>NIT</th>
+      <td>{{ venta.nit }}</td>
+    </tr>
+    <tr>
+      <th>Factura</th>
+      <td>{{ venta.factura }}</td>
+    </tr>
+    <tr>
+      <th>Importe</th>
+      <td>{{ venta.importe }}</td>
+    </tr>
+    <tr>
+      <th>IVA</th>
+      <td>{{ venta.iva }}</td>
+    </tr>
+    <tr>
+      <th>Exento</th>
+      <td>{{ venta.exento }}</td>
+    </tr>
+    <tr>
+      <th>ICE</th>
+      <td>{{ venta.ice }}</td>
+    </tr>
+    <tr>
+      <th>Estado</th>
+      <td>{{ venta.estado or 'VIGENTE' }}</td>
+    </tr>
+  </table>
+  <a href="{{ url_for('facturas.ventas') }}" class="btn btn-secondary"
+    >Volver</a
+  >
+</div>
+{% endblock %}

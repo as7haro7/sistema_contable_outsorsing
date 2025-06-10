@@ -1,0 +1,106 @@
+<!-- Agrega esto al inicio de compras.html si usas el mismo template para el formulario -->
+{% if proveedores is defined %}
+<div class="container mt-4">
+    <h3>Nueva Compra</h3>
+    <form method="post">
+        <div class="mb-3">
+            <label>Proveedor</label>
+            <select name="proveedor" class="form-control" required>
+                <option value="">Seleccione...</option>
+                {% for prov in proveedores %}
+                <option value="{{ prov.id }}" {% if data and data.proveedor == prov.id %}selected{% endif %}>{{ prov.razon }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Fecha</label>
+            <input type="date" name="fecha" class="form-control" value="{{ data.fecha if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>NIT</label>
+            <input type="text" name="nit" class="form-control" value="{{ data.nit if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Nro. Factura</label>
+            <input type="text" name="factura" class="form-control" value="{{ data.factura if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Importe</label>
+            <input type="number" step="0.01" name="importe" class="form-control" value="{{ data.importe if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Exento</label>
+            <input type="number" step="0.01" name="exento" class="form-control" value="{{ data.exento if data else '0' }}">
+        </div>
+        <div class="mb-3">
+            <label>ICE</label>
+            <input type="number" step="0.01" name="ice" class="form-control" value="{{ data.ice if data else '0' }}">
+        </div>
+        <button type="submit" class="btn btn-success">Registrar</button>
+        <a href="{{ url_for('facturas.compras') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+<hr>
+{% endif %}
+
+{% extends 'base/base.html' %} {% block content %}
+<div class="container mt-4">
+  <h2>Libro de Compras</h2>
+  <a href="{{ url_for('facturas.nueva_compra') }}" class="btn btn-primary mb-3"
+    >Nueva Compra</a
+  >
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %} {% endif %} {% endwith %}
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th>NIT</th>
+        <th>Factura</th>
+        <th>Importe</th>
+        <th>IVA</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for compra in compras %}
+      <tr>
+        <td>{{ compra.fecha }}</td>
+        <td>{{ compra.razon or compra.proveedor }}</td>
+        <td>{{ compra.nit }}</td>
+        <td>{{ compra.factura }}</td>
+        <td>{{ compra.importe }}</td>
+        <td>{{ compra.iva }}</td>
+        <td>
+          <a
+            href="{{ url_for('facturas.detalle_compra', factura_id=compra.id) }}"
+            class="btn btn-sm btn-info"
+            >Ver</a
+          >
+          <form
+            action="{{ url_for('facturas.anular_compra', factura_id=compra.id) }}"
+            method="post"
+            style="display: inline"
+          >
+            <button
+              type="submit"
+              class="btn btn-sm btn-danger"
+              onclick="return confirm('¿Anular esta factura?')"
+            >
+              Anular
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="text-center">No hay compras registradas.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

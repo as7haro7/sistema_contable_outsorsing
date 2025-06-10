@@ -1,0 +1,144 @@
+{% extends "base/base.html" %} {% block title %}Panel del Contador{% endblock %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="mb-5">
+    <h1 class="display-5 fw-light">Panel del Contador</h1>
+    <p class="lead text-body-secondary">
+      Gestiona el ciclo contable completo de la empresa: plan de cuentas,
+      asientos, libros, reportes y terceros.
+    </p>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-6">
+      <div class="card border-light shadow-sm">
+        <div
+          class="card-body d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <h6 class="card-subtitle mb-2 text-muted">Compras del Periodo</h6>
+            <span class="display-6 fw-bold text-primary"
+              >{{ data.compras.monto|float|round(2) }} Bs.</span
+            >
+            <p class="card-text text-muted mb-0">
+              {{ data.compras.total }} transacciones
+            </p>
+          </div>
+          <i class="bi bi-cart4 fs-1 text-primary opacity-25"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-light shadow-sm">
+        <div
+          class="card-body d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <h6 class="card-subtitle mb-2 text-muted">Ventas del Periodo</h6>
+            <span class="display-6 fw-bold text-success"
+              >{{ data.ventas.monto|float|round(2) }} Bs.</span
+            >
+            <p class="card-text text-muted mb-0">
+              {{ data.ventas.total }} transacciones
+            </p>
+          </div>
+          <i class="bi bi-cash-coin fs-1 text-success opacity-25"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom-0">
+      <h5 class="card-title fw-light pt-2">
+        Compras y Ventas (últimos 6 meses)
+      </h5>
+    </div>
+    <div class="card-body">
+      <canvas id="graficaMes" style="width: 100%; height: 350px"></canvas>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Preparamos los datos desde Jinja2
+    const labels = {{ data.ventas_mes|map(attribute='mes')|reverse|list|tojson|safe }};
+    const ventas = {{ data.ventas_mes|map(attribute='monto')|reverse|list|tojson|safe }};
+    const compras = {{ data.compras_mes|map(attribute='monto')|reverse|list|tojson|safe }};
+
+    // Paleta de colores moderna
+    const colorVentas = 'rgba(25, 135, 84, 0.7)'; // Tono de verde (Bootstrap Success)
+    const colorVentasBorde = 'rgba(25, 135, 84, 1)';
+    const colorCompras = 'rgba(13, 110, 253, 0.7)'; // Tono de azul (Bootstrap Primary)
+    const colorComprasBorde = 'rgba(13, 110, 253, 1)';
+    const colorGrid = 'rgba(0, 0, 0, 0.05)';
+    const fontColor = '#6c757d'; // Bootstrap text-muted
+
+    const ctx = document.getElementById("graficaMes").getContext("2d");
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Ventas",
+            data: ventas,
+            backgroundColor: colorVentas,
+            borderColor: colorVentasBorde,
+            borderWidth: 1
+          },
+          {
+            label: "Compras",
+            data: compras,
+            backgroundColor: colorCompras,
+            borderColor: colorComprasBorde,
+            borderWidth: 1
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: fontColor,
+              font: {
+                size: 14
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: '#000',
+            titleFont: { size: 16 },
+            bodyFont: { size: 14 },
+            padding: 12,
+            cornerRadius: 4,
+            boxPadding: 4,
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: { color: fontColor, font: { size: 12 } },
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: colorGrid
+            },
+            ticks: { color: fontColor, font: { size: 12 } },
+          },
+        },
+      },
+    });
+  });
+</script>
+
+{% endblock %}

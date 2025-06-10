@@ -1,0 +1,65 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Nueva Cuenta</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label for="cuenta" class="form-label">Código de Cuenta</label>
+      <input
+        type="text"
+        class="form-control"
+        id="cuenta"
+        name="cuenta"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label for="descrip" class="form-label">Descripción</label>
+      <input
+        type="text"
+        class="form-control"
+        id="descrip"
+        name="descrip"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label for="tipo_cuenta" class="form-label">Tipo de Cuenta</label>
+      <select class="form-select" id="tipo_cuenta" name="tipo_cuenta" required>
+        {% for tipo in tipos_cuenta %}
+        <option value="{{ tipo.codigo }}">{{ tipo.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="nivel" class="form-label">Nivel</label>
+      <select class="form-select" id="nivel" name="nivel" required>
+        {% for nivel in niveles %}
+        <option value="{{ nivel.nivel }}">
+          {{ nivel.nivel }} - {{ nivel.digitos }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="tipomov" class="form-label">Tipo de Movimiento</label>
+      <select class="form-select" id="tipomov" name="tipomov" required>
+        {% for mov in tipos_movimiento %}
+        <option value="{{ mov.codigo }}">{{ mov.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="moneda" class="form-label">Moneda</label>
+      <select class="form-select" id="moneda" name="moneda" required>
+        {% for moneda in monedas %}
+        <option value="{{ moneda.codigo }}">{{ moneda.descrip }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-success">Crear</button>
+    <a href="{{ url_for('plancuentas.index') }}" class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+<aside class="sidebar bg-white border-end h-100" style="min-height: 100vh; width: 220px;">
+  <div class="position-sticky" style="top: 60px;">
+    <ul class="nav nav-pills flex-column pt-3">
+        {% if 'ADMIN' in session.permissions %}
+            <li class="nav-header text-muted small fw-bold mb-2 ps-3">ADMINISTRACIÓN</li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('usuarios.listar') }}">
+                    <i class="fas fa-users-cog"></i> Usuarios
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('empresas.listar') }}">
+                    <i class="fas fa-building"></i> Empresas
+                </a>
+            </li>
+            
+
+        {% elif 'CONTADOR' in session.permissions %}
+            <li class="nav-header text-muted small fw-bold mb-2 ps-3">EMPRESA</li>
+           <li class="nav-item bg-light border rounded m-2 p-2">
+    <div class="mb-1">
+        <span class="fw-bold">{{ session.empresa_nombre }}</span>
+    </div>
+    <form method="post" action="{{ url_for('auth.cambiar_gestion_sidebar') }}">
+        <label class="small text-muted">Gestión Activa:</label>
+        <select class="form-select form-select-sm" name="gestion_id" onchange="this.form.submit()">
+            {% for gestion in session.gestiones_disponibles %}
+                <option value="{{ gestion.id }}" {% if gestion.id == session.gestion_activa %}selected{% endif %}>
+                    {{ gestion.descrip }} ({{ gestion.gestion }})
+                </option>
+            {% endfor %}
+        </select>
+        <noscript>
+            <button type="submit" class="btn btn-primary btn-sm mt-2">Cambiar</button>
+        </noscript>
+    </form>
+</li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home"></i> Resumen
+                </a>
+            </li>
+            <li class="nav-header text-muted small fw-bold mt-4 mb-2 ps-3">CONFIGURACIÓN</li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('plancuentas.index') }}">
+                    <i class="fas fa-sitemap"></i> Plan de Cuentas
+                </a>
+            </li>
+           
+            <li class="nav-header text-muted small fw-bold mt-4 mb-2 ps-3">OPERACIONES</li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('asientos.index') }}">
+                    <i class="fas fa-file-invoice-dollar"></i> Asientos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('terceros.index') }}">
+                    <i class="fas fa-address-book"></i> Terceros
+                </a>
+            </li>
+            <li class="nav-header text-muted small fw-bold mt-4 mb-2 ps-3">FACTURAS</li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'facturas.compras' %}active{% endif %}" href="{{ url_for('facturas.compras') }}">
+                    <i class="fas fa-shopping-cart"></i> Compras
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'facturas.ventas' %}active{% endif %}" href="{{ url_for('facturas.ventas') }}">
+                    <i class="fas fa-cash-register"></i> Ventas
+                </a>
+            </li>
+
+           
+            <li class="nav-header text-muted small fw-bold mt-4 mb-2 ps-3">REPORTES</li>
+            
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.libro_diario' %}active{% endif %}" href="{{ url_for('libros.libro_diario') }}">
+                    <i class="fas fa-book-open"></i> Libro Diario
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.libro_mayor' %}active{% endif %}" href="{{ url_for('libros.libro_mayor') }}">
+                    <i class="fas fa-book"></i> Libro Mayor
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.balance_comprobacion' %}active{% endif %}" href="{{ url_for('libros.balance_comprobacion') }}">
+                    <i class="fas fa-clipboard-list"></i> Balance de Comprobación
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.balance_general' %}active{% endif %}" href="{{ url_for('libros.balance_general') }}">
+                    <i class="fas fa-chart-pie"></i> Balance General
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.estado_resultados' %}active{% endif %}" href="{{ url_for('libros.estado_resultados') }}">
+                    <i class="fas fa-chart-line"></i> Estado de Resultados
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'libros.resumen_periodo' %}active{% endif %}" href="{{ url_for('libros.resumen_periodo') }}">
+                    <i class="fas fa-chart-bar"></i> Resumen del Período
+                </a>
+            </li>
+        {% elif 'CLIENTE' in session.permissions %}
+            <li class="nav-header text-muted small fw-bold mb-2 ps-3">CONSULTA</li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'cliente.dashboard' %}active{% endif %}" href="{{ url_for('cliente.dashboard') }}">
+                    <i class="fas fa-home"></i> Mi Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('cliente.estados_financieros') }}">
+                    <i class="fas fa-chart-pie"></i> Estados Financieros
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('cliente.reportes') }}">
+                    <i class="fas fa-chart-bar"></i> Reportes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('cliente.facturas') }}">
+                    <i class="fas fa-file-invoice"></i> Facturas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('cliente.descargas') }}">
+                    <i class="fas fa-download"></i> Descargas
+                </a>
+            </li>
+        {% endif %}
+
+        <li class="nav-header text-muted small fw-bold mt-4 mb-2 ps-3">CUENTA</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </a>
+        </li>
+    </ul>
+</aside>

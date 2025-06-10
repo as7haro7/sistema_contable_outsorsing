@@ -1,0 +1,59 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Detalle de Asiento</h2>
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %} {% endif %} {% endwith %}
+  <ul class="list-group mb-3">
+    <li class="list-group-item">
+      <strong>Código:</strong> {{ asiento.codigo }}
+    </li>
+    <li class="list-group-item"><strong>Fecha:</strong> {{ asiento.fecha }}</li>
+    <li class="list-group-item">
+      <strong>Tipo:</strong> {{ asiento.tipo_descrip }}
+    </li>
+    <li class="list-group-item"><strong>Glosa:</strong> {{ asiento.glosa }}</li>
+    <li class="list-group-item">
+      <strong>Estado:</strong> {{ asiento.estado }}
+    </li>
+    <li class="list-group-item">
+      <strong>Usuario:</strong> {{ asiento.usuario }}
+    </li>
+  </ul>
+  <h5>Detalles</h5>
+  <div class="table-responsive">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Cuenta</th>
+          <th>Descripción</th>
+          <th>Debe Bs</th>
+          <th>Haber Bs</th>
+          <th>Debe $us</th>
+          <th>Haber $us</th>
+          <th>Centro de Costo</th>
+          <th>Referencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for det in detalles %}
+        <tr>
+          <td>{{ det.cuenta }}</td>
+          <td>{{ det.cuenta_descrip }}</td>
+          <td>{{ det.debebs }}</td>
+          <td>{{ det.haberbs }}</td>
+          <td>{{ det.debesus }}</td>
+          <td>{{ det.habersus }}</td>
+          <td>{{ det.cencosto }}</td>
+          <td>{{ det.referencia }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="{{ url_for('asientos.index') }}" class="btn btn-secondary mt-3"
+    >Volver</a
+  >
+</div>
+{% endblock %}

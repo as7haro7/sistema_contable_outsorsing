@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Acceso al Sistema - Contabilidad Moderna</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0x30z3p7w063M/t7a3Q254L/p4d/2jXvT8+0J/B8tZ+5h8B7z6z5d6w=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <style>
+      :root {
+        --bg-light: #f0f2f5; /* Fondo más claro, casi blanco */
+        --card-bg: #ffffff; /* Blanco puro para el card */
+        --text-dark: #212529; /* Negro muy oscuro para texto principal */
+        --text-muted: #6c757d; /* Gris para texto secundario */
+        --border-light: #e9ecef; /* Borde muy claro para inputs y separadores */
+        --primary-accent: #007bff; /* Un toque de azul para elementos interactivos */
+        --shadow-light: rgba(0, 0, 0, 0.05); /* Sombra muy sutil */
+      }
+
+      body {
+        font-family: "Poppins", sans-serif; /* Fuente moderna */
+        background-color: var(--bg-light);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-dark);
+        line-height: 1.6;
+        overflow: hidden; /* Para animaciones de fondo si se agregan */
+      }
+
+      .login-wrapper {
+        position: relative;
+        z-index: 10;
+      }
+
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 1rem; /* Bordes suaves y modernos */
+        box-shadow: 0 0.75rem 2rem var(--shadow-light); /* Sombra sutil pero presente */
+        border: none; /* Eliminar el borde predeterminado */
+        overflow: hidden; /* Asegura que los bordes redondeados se apliquen bien */
+        animation: fadeInScale 0.7s ease-out forwards; /* Animación de entrada con escala */
+      }
+
+      @keyframes fadeInScale {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .card-header-modern {
+        background-color: var(
+          --card-bg
+        ); /* Fondo blanco, no hay diferencia de color */
+        border-bottom: 1px solid var(--border-light); /* Separador muy sutil */
+        padding: 2.5rem 2.5rem 1.5rem;
+        text-align: center;
+      }
+
+      .card-header-modern h4 {
+        font-weight: 700;
+        font-size: 2rem; /* Título más grande y con impacto */
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+      }
+
+      .card-header-modern p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+
+      .social-icons-modern a {
+        color: var(--text-muted); /* Iconos sutiles */
+        font-size: 1.4rem;
+        margin: 0 0.8rem;
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+
+      .social-icons-modern a:hover {
+        color: var(--text-dark); /* Se oscurecen y ligeramente se levantan */
+        transform: translateY(-2px);
+      }
+
+      .card-body {
+        padding: 2.5rem;
+      }
+
+      .form-label {
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        display: block; /* Asegura que la etiqueta esté en su propia línea */
+      }
+
+      .form-control {
+        border: 1px solid var(--border-light);
+        border-radius: 0.5rem; /* Bordes suaves */
+        padding: 0.9rem 1.2rem;
+        font-size: 1rem;
+        color: var(--text-dark);
+        transition: all 0.3s ease; /* Transición suave para todos los cambios */
+      }
+
+      .form-control:focus {
+        border-color: var(--primary-accent); /* Borde de acento al enfocar */
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1); /* Sombra de foco muy ligera */
+        background-color: #ffffff;
+        outline: none;
+      }
+
+      .btn-primary {
+        background-color: var(--text-dark); /* Botón principal en negro */
+        border-color: var(--text-dark);
+        color: #ffffff;
+        border-radius: 0.6rem; /* Bordes suaves para el botón */
+        padding: 1rem 1.75rem;
+        font-size: 1.05rem;
+        font-weight: 600;
+        transition: background-color 0.2s ease, transform 0.2s ease,
+          box-shadow 0.2s ease;
+        letter-spacing: 0.5px; /* Ligero espaciado entre letras */
+      }
+
+      .btn-primary:hover {
+        background-color: #343a40; /* Un gris más oscuro al pasar el mouse */
+        border-color: #343a40;
+        transform: translateY(-2px); /* Efecto de "levantamiento" */
+        box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.1); /* Sombra al pasar el mouse */
+      }
+
+      .form-check-input:checked {
+        background-color: var(--primary-accent); /* Checkbox de acento */
+        border-color: var(--primary-accent);
+      }
+
+      .form-check-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .alert {
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+      }
+
+      .text-link {
+        color: var(--primary-accent); /* Enlaces en el color de acento */
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .text-link:hover {
+        color: #0056b3; /* Tono más oscuro al pasar el mouse */
+        text-decoration: underline;
+      }
+
+      /* Pequeño detalle de fondo abstracto */
+      .background-dots {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background-image: radial-gradient(
+          var(--border-light) 1px,
+          transparent 1px
+        );
+        background-size: 20px 20px;
+        opacity: 0.3;
+        z-index: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="background-dots"></div>
+    <div class="container login-wrapper">
+      <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7 col-sm-9">
+          <div class="card">
+            <div class="card-header-modern">
+              <h4>Acceso a tu Cuenta</h4>
+              <p class="text-muted">
+                Inicia sesión para gestionar tu contabilidad.
+              </p>
+            </div>
+            <div class="card-body">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %} {% for category, message in messages %}
+              <div
+                class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                role="alert"
+              >
+                {{ message }}
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                ></button>
+              </div>
+              {% endfor %} {% endif %} {% endwith %}
+
+              <form role="form" method="POST" class="text-start mt-4">
+                <div class="mb-3">
+                  <label for="username" class="form-label">Usuario</label>
+                  <input
+                    type="text"
+                    name="username"
+                    class="form-control"
+                    id="username"
+                    placeholder="usuario"
+                    required
+                    autocomplete="username"
+                  />
+                </div>
+                <div class="mb-4">
+                  <label for="password" class="form-label">Contraseña</label>
+                  <input
+                    type="password"
+                    name="password"
+                    class="form-control"
+                    id="password"
+                    placeholder="••••••••"
+                    required
+                    autocomplete="current-password"
+                  />
+                </div>
+
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary btn-lg">
+                    Ingresar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

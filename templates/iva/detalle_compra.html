@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %} {% block content %}
+<div class="container mt-4">
+  <h3>Detalle de Compra</h3>
+  <table class="table table-bordered">
+    <tr>
+      <th>Proveedor</th>
+      <td>{{ compra.razon or compra.proveedor }}</td>
+    </tr>
+    <tr>
+      <th>Fecha</th>
+      <td>{{ compra.fecha }}</td>
+    </tr>
+    <tr>
+      <th>NIT</th>
+      <td>{{ compra.nit }}</td>
+    </tr>
+    <tr>
+      <th>Factura</th>
+      <td>{{ compra.factura }}</td>
+    </tr>
+    <tr>
+      <th>Importe</th>
+      <td>{{ compra.importe }}</td>
+    </tr>
+    <tr>
+      <th>IVA</th>
+      <td>{{ compra.iva }}</td>
+    </tr>
+    <tr>
+      <th>Exento</th>
+      <td>{{ compra.exento }}</td>
+    </tr>
+    <tr>
+      <th>ICE</th>
+      <td>{{ compra.ice }}</td>
+    </tr>
+    <tr>
+      <th>Estado</th>
+      <td>{{ compra.estado or 'VIGENTE' }}</td>
+    </tr>
+  </table>
+  <a href="{{ url_for('facturas.compras') }}" class="btn btn-secondary"
+    >Volver</a
+  >
+</div>
+{% endblock %}

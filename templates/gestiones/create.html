@@ -1,0 +1,56 @@
+{% extends 'base/base.html' %} {% block title %}Nueva Gestión{% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h2>Nueva Gestión</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label>Descripción</label>
+      <input type="text" name="descripcion" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Periodo</label>
+      <input
+        type="text"
+        name="periodo"
+        class="form-control"
+        required
+        placeholder="Ej: 2025"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Fecha de inicio</label>
+      <input type="date" name="fecha_inicio" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Fecha de fin</label>
+      <input type="date" name="fecha_fin" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Código de moneda</label>
+      <input
+        type="text"
+        name="codigo_moneda"
+        class="form-control"
+        value="BOB"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label>Nombre de moneda</label>
+      <input
+        type="text"
+        name="nombre_moneda"
+        class="form-control"
+        value="Boliviano"
+        required
+      />
+    </div>
+    <button type="submit" class="btn btn-success">Crear Gestión</button>
+    <a
+      href="{{ url_for('gestiones.listar', empresa_id=empresa_id) }}"
+      class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </form>
+</div>
+{% endblock %}

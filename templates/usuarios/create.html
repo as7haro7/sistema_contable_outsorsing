@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %} {% block title %}Nuevo Usuario{% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h2>Nuevo Usuario</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label>Usuario</label>
+      <input type="text" name="username" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Nombre completo</label>
+      <input type="text" name="nombre_completo" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Email</label>
+      <input type="email" name="email" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>Contraseña</label>
+      <input type="password" name="password" class="form-control" required />
+    </div>
+    <div class="mb-3">
+      <label>¿Es super usuario?</label>
+      <select name="es_super_usuario" class="form-select">
+        <option value="false">No</option>
+        <option value="true">Sí</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label>Empresas asignadas</label>
+      <select name="empresas" class="form-select" multiple>
+        {% for empresa in empresas %}
+        <option value="{{ empresa.id }}">{{ empresa.razon_social }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label>Perfil</label>
+      <select name="perfil_id" class="form-select" required>
+        {% for perfil in perfiles %}
+        <option value="{{ perfil.id }}">{{ perfil.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label>Permisos</label>
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="puede_crear"
+          value="1"
+          id="puede_crear"
+        />
+        <label class="form-check-label" for="puede_crear">Crear</label>
+      </div>
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="puede_actualizar"
+          value="1"
+          id="puede_actualizar"
+        />
+        <label class="form-check-label" for="puede_actualizar"
+          >Actualizar</label
+        >
+      </div>
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="puede_eliminar"
+          value="1"
+          id="puede_eliminar"
+        />
+        <label class="form-check-label" for="puede_eliminar">Eliminar</label>
+      </div>
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="puede_imprimir"
+          value="1"
+          id="puede_imprimir"
+        />
+        <label class="form-check-label" for="puede_imprimir">Imprimir</label>
+      </div>
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="puede_exportar"
+          value="1"
+          id="puede_exportar"
+        />
+        <label class="form-check-label" for="puede_exportar">Exportar</label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-success">Crear Usuario</button>
+    <a href="{{ url_for('usuarios.listar') }}" class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </form>
+</div>
+{% endblock %}

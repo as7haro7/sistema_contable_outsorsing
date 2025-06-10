@@ -1,0 +1,59 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Resumen del Período</h2>
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-auto">
+      <input
+        type="date"
+        name="fecha_desde"
+        class="form-control"
+        value="{{ fecha_desde }}"
+      />
+    </div>
+    <div class="col-auto">
+      <input
+        type="date"
+        name="fecha_hasta"
+        class="form-control"
+        value="{{ fecha_hasta }}"
+      />
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+  <ul class="list-group">
+    <li class="list-group-item">
+      <strong>Total Asientos:</strong> {{ resumen.total_asientos }}
+    </li>
+    <li class="list-group-item">
+      <strong>Total Movimientos:</strong> {{ resumen.total_movimientos }}
+    </li>
+    <li class="list-group-item">
+      <strong>Total Debe (Bs):</strong> {{ resumen.total_debe_bs|float|round(2)
+      }}
+    </li>
+    <li class="list-group-item">
+      <strong>Total Haber (Bs):</strong> {{
+      resumen.total_haber_bs|float|round(2) }}
+    </li>
+    <li class="list-group-item">
+      <strong>Total Debe ($us):</strong> {{
+      resumen.total_debe_sus|float|round(2) }}
+    </li>
+    <li class="list-group-item">
+      <strong>Total Haber ($us):</strong> {{
+      resumen.total_haber_sus|float|round(2) }}
+    </li>
+    <li class="list-group-item">
+      <strong>Cuentas Afectadas:</strong> {{ resumen.cuentas_afectadas }}
+    </li>
+    <li class="list-group-item">
+      <strong>Primera Fecha:</strong> {{ resumen.primera_fecha }}
+    </li>
+    <li class="list-group-item">
+      <strong>Última Fecha:</strong> {{ resumen.ultima_fecha }}
+    </li>
+  </ul>
+</div>
+{% endblock %}

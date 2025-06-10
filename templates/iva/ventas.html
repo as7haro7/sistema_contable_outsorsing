@@ -1,0 +1,103 @@
+<!-- Agrega esto al inicio de ventas.html si usas el mismo template para el formulario -->
+{% if clientes is defined %}
+<div class="container mt-4">
+    <h3>Nueva Venta</h3>
+    <form method="post">
+        <div class="mb-3">
+            <label>Cliente</label>
+            <select name="cliente" class="form-control" required>
+                <option value="">Seleccione...</option>
+                {% for cli in clientes %}
+                <option value="{{ cli.id }}" {% if data and data.cliente == cli.id %}selected{% endif %}>{{ cli.razon }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Fecha</label>
+            <input type="date" name="fecha" class="form-control" value="{{ data.fecha if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>NIT</label>
+            <input type="text" name="nit" class="form-control" value="{{ data.nit if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Nro. Factura</label>
+            <input type="text" name="factura" class="form-control" value="{{ data.factura if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Importe</label>
+            <input type="number" step="0.01" name="importe" class="form-control" value="{{ data.importe if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Exento</label>
+            <input type="number" step="0.01" name="exento" class="form-control" value="{{ data.exento if data else '0' }}">
+        </div>
+        <div class="mb-3">
+            <label>ICE</label>
+            <input type="number" step="0.01" name="ice" class="form-control" value="{{ data.ice if data else '0' }}">
+        </div>
+        <div class="mb-3">
+            <label>Razón Social</label>
+            <input type="text" name="razonsocial" class="form-control" value="{{ data.razonsocial if data else '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label>Autorización</label>
+            <input type="text" name="autorizacion" class="form-control" value="{{ data.autorizacion if data else '' }}" required>
+        </div>
+        <button type="submit" class="btn btn-success">Registrar</button>
+        <a href="{{ url_for('facturas.ventas') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+<hr>
+{% endif %}
+
+
+{% extends 'base/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Libro de Ventas</h2>
+    <a href="{{ url_for('facturas.nueva_venta') }}" class="btn btn-primary mb-3">Nueva Venta</a>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>NIT</th>
+                <th>Factura</th>
+                <th>Importe</th>
+                <th>IVA</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venta in ventas %}
+            <tr>
+                <td>{{ venta.fecha }}</td>
+                <td>{{ venta.razon or venta.cliente }}</td>
+                <td>{{ venta.nit }}</td>
+                <td>{{ venta.factura }}</td>
+                <td>{{ venta.importe }}</td>
+                <td>{{ venta.iva }}</td>
+                <td>
+                    <a href="{{ url_for('facturas.detalle_venta', factura_id=venta.id) }}" class="btn btn-sm btn-info">Ver</a>
+                    <form action="{{ url_for('facturas.anular_venta', factura_id=venta.id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Anular esta factura?')">Anular</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center">No hay ventas registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

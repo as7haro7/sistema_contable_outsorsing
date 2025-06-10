@@ -1,0 +1,61 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2>Balance de Comprobación</h2>
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-auto">
+      <input
+        type="date"
+        name="fecha_desde"
+        class="form-control"
+        value="{{ fecha_desde }}"
+      />
+    </div>
+    <div class="col-auto">
+      <input
+        type="date"
+        name="fecha_hasta"
+        class="form-control"
+        value="{{ fecha_hasta }}"
+      />
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Cuenta</th>
+          <th>Descripción</th>
+          <th>Saldo Inicial</th>
+          <th>Debe</th>
+          <th>Haber</th>
+          <th>Saldo Final</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in balance %}
+        <tr>
+          <td>{{ item.cuenta }}</td>
+          <td>{{ item.cuenta_descrip }}</td>
+          <td class="text-end">{{ item.saldo_inicial|float|round(2) }}</td>
+          <td class="text-end">0.00</td>
+          <td class="text-end">{{ item.total_haber_bs|float|round(2) }}</td>
+          <td class="text-end">{{ item.saldo_bs|float|round(2) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="2" class="text-end">Totales:</th>
+          <th class="text-end">{{ total_saldo_inicial|float|round(2) }}</th>
+          <th class="text-end">{{ total_debe|float|round(2) }}</th>
+          <th class="text-end">{{ total_haber|float|round(2) }}</th>
+          <th class="text-end">{{ total_saldo_final|float|round(2) }}</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

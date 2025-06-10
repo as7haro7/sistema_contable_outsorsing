@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %} {% block title %}Gestiones{% endblock %} {% block
+content %}
+<h2>Gestiones de la Empresa</h2>
+<a
+  href="{{ url_for('gestiones.crear', empresa_id=empresa_id) }}"
+  class="btn btn-success mb-2"
+  >Nueva Gestión</a
+>
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Descripción</th>
+      <th>Periodo</th>
+      <th>Inicio</th>
+      <th>Fin</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for g in gestiones %}
+    <tr>
+      <td>{{ g.id }}</td>
+      <td>{{ g.descripcion }}</td>
+      <td>{{ g.periodo }}</td>
+      <td>{{ g.fecha_inicio }}</td>
+      <td>{{ g.fecha_fin }}</td>
+      <td>
+        {% if g.activo %}<span class="badge bg-success">Activa</span>{% else
+        %}<span class="badge bg-secondary">Inactiva</span>{% endif %}
+      </td>
+      <td>
+        <a
+          href="{{ url_for('gestiones.editar', id=g.id) }}"
+          class="btn btn-sm btn-warning"
+          >Editar</a
+        >
+        <a
+          href="{{ url_for('gestiones.eliminar', id=g.id) }}"
+          class="btn btn-sm btn-danger"
+          onclick="return confirm('¿Eliminar gestión?')"
+          >Eliminar</a
+        >
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

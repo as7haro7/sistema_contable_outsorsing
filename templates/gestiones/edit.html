@@ -1,0 +1,74 @@
+{% extends 'base/base.html' %} {% block title %}Editar Gestión{% endblock %} {%
+block content %}
+<div class="container mt-4">
+  <h2>Editar Gestión</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label>Descripción</label>
+      <input
+        type="text"
+        name="descripcion"
+        class="form-control"
+        required
+        value="{{ gestion.descripcion }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Periodo</label>
+      <input
+        type="text"
+        name="periodo"
+        class="form-control"
+        required
+        value="{{ gestion.periodo }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Fecha de inicio</label>
+      <input
+        type="date"
+        name="fecha_inicio"
+        class="form-control"
+        required
+        value="{{ gestion.fecha_inicio.strftime('%Y-%m-%d') if gestion.fecha_inicio else '' }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Fecha de fin</label>
+      <input
+        type="date"
+        name="fecha_fin"
+        class="form-control"
+        required
+        value="{{ gestion.fecha_fin.strftime('%Y-%m-%d') if gestion.fecha_fin else '' }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Código de moneda</label>
+      <input
+        type="text"
+        name="codigo_moneda"
+        class="form-control"
+        required
+        value="{{ gestion.codigo_moneda }}"
+      />
+    </div>
+    <div class="mb-3">
+      <label>Nombre de moneda</label>
+      <input
+        type="text"
+        name="nombre_moneda"
+        class="form-control"
+        required
+        value="{{ gestion.nombre_moneda }}"
+      />
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    <a
+      href="{{ url_for('gestiones.listar', empresa_id=gestion.empresa_id) }}"
+      class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </form>
+</div>
+{% endblock %}

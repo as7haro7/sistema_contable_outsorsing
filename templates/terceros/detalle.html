@@ -1,0 +1,54 @@
+{% extends "base/base.html" %} {% block content %}
+<div class="container py-4">
+  <h2>Detalle de {{ tipo|capitalize }}</h2>
+  <ul class="list-group mb-4">
+    <li class="list-group-item">
+      <strong>Razón Social:</strong> {{ tercero.razon }}
+    </li>
+    <li class="list-group-item"><strong>NIT:</strong> {{ tercero.nit }}</li>
+    {% if tipo == 'proveedor' %}
+    <li class="list-group-item">
+      <strong>Autorización:</strong> {{ tercero.autorizacion }}
+    </li>
+    {% endif %}
+    <li class="list-group-item">
+      <strong>Teléfono:</strong> {{ tercero.telf }}
+    </li>
+    <li class="list-group-item">
+      <strong>Celular:</strong> {{ tercero.celular }}
+    </li>
+    <li class="list-group-item"><strong>Email:</strong> {{ tercero.email }}</li>
+    <li class="list-group-item"><strong>País:</strong> {{ tercero.pais }}</li>
+    <li class="list-group-item">
+      <strong>Departamento:</strong> {{ tercero.depto }}
+    </li>
+    <li class="list-group-item">
+      <strong>Domicilio:</strong> {{ tercero.domicilio }}
+    </li>
+    <li class="list-group-item">
+      <strong>Usuario:</strong> {{ tercero.usuario }}
+    </li>
+    <li class="list-group-item">
+      <strong>Fecha Registro:</strong> {{ tercero.fechasys }}
+    </li>
+  </ul>
+
+  <h4>Contactos</h4>
+  <ul class="list-group mb-3">
+    {% for contacto in contactos %}
+    <li class="list-group-item">
+      <strong>{{ contacto.nombre }}</strong> | Tel: {{ contacto.telf }} | Cel:
+      {{ contacto.celular }} | Email: {{ contacto.email }}
+    </li>
+    {% else %}
+    <li class="list-group-item text-muted">Sin contactos registrados</li>
+    {% endfor %}
+  </ul>
+  <a
+    href="{{ url_for('terceros.editar', tipo=tipo, tercero_id=tercero.id) }}"
+    class="btn btn-warning"
+    >Editar</a
+  >
+  <a href="{{ url_for('terceros.index') }}" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}
