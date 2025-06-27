@@ -18,6 +18,9 @@
       <strong>Tipo de Movimiento:</strong> {{ cuenta.tipomov_descrip }}
     </li>
     <li class="list-group-item"><strong>Nivel:</strong> {{ cuenta.nivel }}</li>
+    <li class="list-group-item">
+      <strong>Saldo actual:</strong> {{ cuenta.saldo }}
+    </li>
   </ul>
   <a href="{{ url_for('plancuentas.index') }}" class="btn btn-secondary mt-3"
     >Volver</a

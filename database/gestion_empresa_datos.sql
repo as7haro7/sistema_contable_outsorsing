@@ -1,14 +1,6 @@
--- =========================================================
--- DATOS DE PRUEBA CORREGIDOS - SISTEMA CONTABLE MULTIEMPRESA
--- =========================================================
--- NOTA: Este script asume que la extensión "pgcrypto" está habilitada
--- como se especifica en tu DDL (CREATE EXTENSION IF NOT EXISTS "pgcrypto").
+
 
 -- === 1. USUARIOS ===
--- Se insertan primero los usuarios para que sus IDs puedan ser referenciadas después.
--- El campo 'supervisor_id' se actualizará al final para evitar problemas de dependencias.
--- Se añaden emails y se maneja la contraseña de forma segura.
-
 INSERT INTO usuarios (username, nombre_completo, email, salt, password_hash, es_super_usuario, requiere_cambio_password) VALUES
 ('admin',     'Administrador del Sistema', 'admin@contasoft.com',   'salt_admin',   crypt('adminpass', gen_salt('bf')), TRUE,  FALSE),
 ('contador1', 'Carlos Mendoza Vargas',   'c.mendoza@contasoft.com', 'salt_c1',      crypt('contadorpass1', gen_salt('bf')), FALSE, TRUE),

@@ -21,7 +21,6 @@ class AuthModel:
         
         if result and len(result) > 0:
             user = result[0]
-            # Sin hash - comparación directa (NO RECOMENDADO EN PRODUCCIÓN)
             if user['password_hash'] == password:  # O usa check_password_hash si corresponde
                 return {
                     'usuario': user['username'],

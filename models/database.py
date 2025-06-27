@@ -27,7 +27,6 @@ class DatabaseManager:
     
     def get_company_connection(self, empresa_id):
         """Conexión a base de datos de empresa específica"""
-        # Corregido: Usar el formato correcto para el nombre de la base de datos
         db_name = f"{current_app.config['COMPANY_DB_PREFIX']}{empresa_id}"
         
         try:
@@ -56,7 +55,6 @@ class DatabaseManager:
                         result = cursor.fetchall()
                     except Exception:
                         result = None
-                # Hacer commit SIEMPRE para operaciones de escritura
                 if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER')):
                     connection.commit()
                 return result if fetch else cursor.rowcount
@@ -65,7 +63,6 @@ class DatabaseManager:
             logging.error(f"Error ejecutando consulta: {e}")
             raise
 
-# Instancia global
 db_manager = DatabaseManager()
 
 

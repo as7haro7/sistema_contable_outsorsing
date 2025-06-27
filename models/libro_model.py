@@ -311,31 +311,8 @@ class LibroModel:
             conn = db_manager.get_company_connection(empresa_id)
             if not fecha_hasta:
                 fecha_hasta = date.today()
-                
-            query = """
-                SELECT 
-                    p.cuenta, 
-                    p.descrip, 
-                    p.tipo_cuenta,
-                    p.nivel,
-                    CASE 
-                        WHEN %s = 'BOB' THEN (p.debebs - p.haberbs)
-                        ELSE (p.debesus - p.habersus)
-                    END as saldo,
-                    CASE 
-                        WHEN %s = 'BOB' THEN p.debebs
-                        ELSE p.debesus
-                    END as total_debe,
-                    CASE 
-                        WHEN %s = 'BOB' THEN p.haberbs
-                        ELSE p.habersus
-                    END as total_haber
-                FROM Plancuenta p
-                WHERE p.activo = TRUE
-                  AND p.tipo_cuenta IN ('ACTIVO', 'PASIVO', 'PATRIMONIO')
-                ORDER BY p.cuenta
-            """
-            return db_manager.execute_query(conn, query, (moneda, moneda, moneda))
+            query = "SELECT * FROM balance_general(%s, %s, %s)"
+            return db_manager.execute_query(conn, query, (fecha_hasta, moneda, empresa_id))
         except Exception as e:
             logger.error(f"Error al obtener balance general: {e}")
             return []

@@ -385,7 +385,7 @@ class EmpresaModel:
         """
         Obtiene estadísticas generales de las empresas
         """
-        conn = None  # <-- Agrega esto
+        conn = None  
         try:
             conn = db_manager.get_master_connection()
             
@@ -418,7 +418,7 @@ class EmpresaModel:
         try:
             db_name = f"{current_app.config['COMPANY_DB_PREFIX']}{empresa_id}"
 
-            # Crear la base de datos si no existe
+            # Crear la base de datos
             conn = psycopg2.connect(
                 host=current_app.config['MASTER_DB_HOST'],
                 port=current_app.config['MASTER_DB_PORT'],
@@ -432,7 +432,7 @@ class EmpresaModel:
                 if not cursor.fetchone():
                     cursor.execute(f'CREATE DATABASE "{db_name}"')
 
-            # Buscar backup personalizado o usar el base
+            # Buscar backup 
             backup_dir = 'backups'
             backup_path = 'database/db_contab.backup'
             if os.path.isdir(backup_dir):
@@ -441,9 +441,9 @@ class EmpresaModel:
                     archivos.sort(reverse=True)
                     backup_path = os.path.join(backup_dir, archivos[0])
 
-            # Restaurar el backup usando pg_restore
+            # Restaurar el backup 
             comando = [
-                r'C:\Program Files\PostgreSQL\17\bin\pg_restore.exe',  # Ajusta la ruta si es necesario
+                r'C:\Program Files\PostgreSQL\17\bin\pg_restore.exe',  
                 '--username', current_app.config['MASTER_DB_USER'],
                 '--host', current_app.config['MASTER_DB_HOST'],
                 '--port', str(current_app.config['MASTER_DB_PORT']),
@@ -454,7 +454,7 @@ class EmpresaModel:
             env = {**os.environ, 'PGPASSWORD': current_app.config['MASTER_DB_PASSWORD']}
             resultado = subprocess.run(comando, capture_output=True, text=True, env=env)
 
-            # Guardar logs
+            # logs
             with open('log_restore_pg.txt', 'w') as log_file:
                 log_file.write("=== STDOUT ===\n")
                 log_file.write(resultado.stdout)
@@ -477,7 +477,7 @@ class EmpresaModel:
         """
         Valida que el NIT sea único en el sistema
         """
-        conn = None  # <-- Agrega esto
+        conn = None  
         try:
             conn = db_manager.get_master_connection()
             
@@ -545,7 +545,7 @@ class EmpresaModel:
         backup_path = os.path.join(backup_dir, f"{db_name}_{fecha}.backup")
 
         comando = [
-            r'C:\Program Files\PostgreSQL\17\bin\pg_dump.exe',  # Ruta completa aquí
+            r'C:\Program Files\PostgreSQL\17\bin\pg_dump.exe', 
             '-U', current_app.config['MASTER_DB_USER'],
             '-h', current_app.config['MASTER_DB_HOST'],
             '-p', str(current_app.config['MASTER_DB_PORT']),

@@ -194,17 +194,14 @@ def balance_general():
         
         balance = LibroModel.get_balance_general(fecha_hasta, moneda)
         
-        # Si es comparativo, obtener datos de fecha anterior
         balance_anterior = None
         if comparativo and fecha_comparacion:
             balance_anterior = LibroModel.get_balance_general(fecha_comparacion, moneda)
         
-        # Agrupar por tipo de cuenta
         activos = [item for item in balance if item.get('tipo_cuenta') == 'ACTIVO']
         pasivos = [item for item in balance if item.get('tipo_cuenta') == 'PASIVO']
         patrimonio = [item for item in balance if item.get('tipo_cuenta') == 'PATRIMONIO']
         
-        # Calcular totales
         total_activos = sum(item.get('saldo', 0) for item in activos)
         total_pasivos = sum(item.get('saldo', 0) for item in pasivos)
         total_patrimonio = sum(item.get('saldo', 0) for item in patrimonio)

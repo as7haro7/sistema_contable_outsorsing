@@ -88,13 +88,13 @@ DECLARE
     v_saldo NUMERIC := 0;
 BEGIN
     -- Sumar movimientos debe
-    SELECT COALESCE(SUM(debebs), 0) INTO v_debe
+    SELECT COALESCE(SUM(ad.debebs), 0) INTO v_debe
     FROM Asiento_det ad
     JOIN Asiento a ON ad.cod_asiento = a.codigo
     WHERE ad.cuenta = p_cuenta AND a.estado = 'CONFIRMADO';
 
     -- Sumar movimientos haber
-    SELECT COALESCE(SUM(haberbs), 0) INTO v_haber
+    SELECT COALESCE(SUM(ad.haberbs), 0) INTO v_haber
     FROM Asiento_det ad
     JOIN Asiento a ON ad.cod_asiento = a.codigo
     WHERE ad.cuenta = p_cuenta AND a.estado = 'CONFIRMADO';
@@ -120,26 +120,14 @@ DECLARE
     v_numero INTEGER;
     v_codigo VARCHAR;
 BEGIN
-    -- Obtener el siguiente número
     SELECT COALESCE(MAX(CAST(SUBSTRING(codigo FROM 5) AS INTEGER)), 0) + 1
     INTO v_numero
     FROM Asiento
     WHERE codigo LIKE 'ASI-%';
 
-    -- Formatear código
     v_codigo := 'ASI-' || LPAD(v_numero::TEXT, 3, '0');
 
     RETURN v_codigo;
 END;
 $$ LANGUAGE plpgsql;
 
--- === FIN DE DATOS DE PRUEBA ===
--- Estos datos te permitirán practicar:
--- 1. Consultas de reportes contables
--- 2. Análisis de ventas y compras
--- 3. Estados financieros básicos
--- 4. Conciliaciones bancarias
--- 5. Control de inventarios
--- 6. Gestión de cuentas por cobrar y pagar
--- 7. Cálculo de impuestos (IVA, IT)
--- 8. Presupuestos y análisis de variaciones

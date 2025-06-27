@@ -140,7 +140,7 @@ BEGIN
                          glosa, fecha, estado, usuario, fechasys)
     VALUES (v_generated_codigo, p_cta, p_tipo, p_secuencia, p_srs,
             v_total_debe_bs, v_total_haber_bs, v_total_debe_sus, v_total_haber_sus,
-            p_glosa, p_fecha, COALESCE(p_estado, 'BORRADOR'), p_usuario, NOW());
+            p_glosa, p_fecha, COALESCE(p_estado, 'CONFIRMADO'), p_usuario, NOW());
 
     -- Insertar detalles
     FOR det IN SELECT * FROM jsonb_array_elements(p_detalles) WITH ORDINALITY AS i

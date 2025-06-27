@@ -14,7 +14,8 @@ class PlancuentaModel:
                 SELECT p.*, 
                        tc.descrip AS tipo_cuenta_descrip,
                        m.descrip AS moneda_descrip,
-                       mv.descrip AS tipomov_descrip
+                       mv.descrip AS tipomov_descrip,
+                       calcular_saldo_cuenta(p.cuenta) AS saldo
                 FROM Plancuenta p
                 LEFT JOIN TipoCuenta tc ON p.tipo_cuenta = tc.codigo
                 LEFT JOIN Moneda m ON p.moneda = m.codigo
@@ -55,7 +56,8 @@ class PlancuentaModel:
                 SELECT p.*, 
                     tc.descrip AS tipo_cuenta_descrip,
                     m.descrip AS moneda_descrip,
-                    mv.descrip AS tipomov_descrip
+                    mv.descrip AS tipomov_descrip,
+                    calcular_saldo_cuenta(p.cuenta) AS saldo
                 FROM Plancuenta p
                 LEFT JOIN TipoCuenta tc ON p.tipo_cuenta = tc.codigo
                 LEFT JOIN Moneda m ON p.moneda = m.codigo

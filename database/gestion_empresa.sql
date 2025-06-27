@@ -1,10 +1,7 @@
--- =====================================================
--- BASE DE DATOS MEJORADA PARA OUTSOURCING CONTABLE
--- =====================================================
 
--- Habilitar extensiones útiles
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- -- 
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- === EMPRESAS Y GESTIÓN ===
 
@@ -194,6 +191,67 @@ CREATE TABLE permisos_usuario (
     FOREIGN KEY (perfil_id) REFERENCES perfiles(id) ON DELETE CASCADE,
     FOREIGN KEY (asignado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

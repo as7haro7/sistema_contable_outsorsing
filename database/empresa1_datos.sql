@@ -1,9 +1,3 @@
--- === DATOS DE PRUEBA PARA EMPRESA BOLIVIANA ===
--- Empresa: "Comercial Andina S.R.L." - La Paz, Bolivia
--- Giro: Venta de productos de consumo masivo y artículos de oficina
-
--- === 1. CONFIGURACIÓN BÁSICA ===
-
 -- Niveles del plan de cuentas
 INSERT INTO Nivel (nivel, digitos, descrip) VALUES
 ('1', 1, 'Nivel 1 - Grupos principales'),
@@ -364,13 +358,3 @@ INSERT INTO LibroVentas (fecha, nit, cliente, razonsocial, factura, autorizacion
 ('2024-12-12', '6677889900', 6, 'Restaurante La Kantuta', '00000111', 'AUT-VTA-001', 11600.00, 0.00, 0.00, 10000.00, 1300.00, 'EMITIDA', 'admin');
 
 
--- === FIN DE DATOS DE PRUEBA ===
--- Estos datos te permitirán practicar:
--- 1. Consultas de reportes contables
--- 2. Análisis de ventas y compras
--- 3. Estados financieros básicos
--- 4. Conciliaciones bancarias
--- 5. Control de inventarios
--- 6. Gestión de cuentas por cobrar y pagar
--- 7. Cálculo de impuestos (IVA, IT)
--- 8. Presupuestos y análisis de variaciones

@@ -51,6 +51,21 @@
                 Anular
               </button>
             </form>
+            {% if asiento.estado == 'BORRADOR' %}
+            <form
+              action="{{ url_for('asientos.confirmar', codigo=asiento.codigo) }}"
+              method="post"
+              style="display: inline"
+            >
+              <button
+                type="submit"
+                class="btn btn-success"
+                onclick="return confirm('¿Confirmar este asiento?');"
+              >
+                Confirmar
+              </button>
+            </form>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

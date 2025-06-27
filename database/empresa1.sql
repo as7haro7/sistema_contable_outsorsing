@@ -1,14 +1,3 @@
--- === BASE DE DATOS CONTABLE CORREGIDA PARA POSTGRESQL ===
--- Mejoras implementadas:
--- 1. Campos SERIAL para autoincrement en PostgreSQL
--- 2. Eliminación en cascada corregida
--- 3. Llaves foráneas optimizadas
--- 4. Campos NOT NULL apropiados
--- 5. Valores por defecto
--- 6. Índices para mejor rendimiento
-
--- === TABLAS DE CONFIGURACIÓN (Se crean primero) ===
-
 CREATE TABLE TipoAsiento (
     codigo VARCHAR(50) PRIMARY KEY,
     descrip VARCHAR(255) NOT NULL,
@@ -309,6 +298,78 @@ CREATE TABLE Presupuesto_det (
     CONSTRAINT uk_presupuesto_mes UNIQUE (id_presupuesto, mes)
 );
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- === ÍNDICES PARA MEJOR RENDIMIENTO ===
 
 -- Índices para Proveedores
@@ -377,7 +438,7 @@ CREATE TRIGGER trg_libroventas_update
     FOR EACH ROW
     EXECUTE FUNCTION actualizar_fecha_modificacion();
 
--- === VISTAS ÚTILES ===
+-- === VISTAS ===
 
 -- Vista de saldos por cuenta
 CREATE VIEW v_saldos_cuenta AS
